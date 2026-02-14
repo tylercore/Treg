@@ -83,6 +83,12 @@ describe("parseArgs", () => {
       ])
     ).toThrow("Invalid --framework-version: major version must be numeric")
   })
+
+  it("throws when non-react uses framework version", () => {
+    expect(() =>
+      parseArgs(["init", "--framework", "vue", "--framework-version", "3"])
+    ).toThrow("Unsupported --framework-version for framework: vue")
+  })
 })
 
 describe("resolveFeatures", () => {

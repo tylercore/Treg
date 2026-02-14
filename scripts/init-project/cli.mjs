@@ -127,6 +127,16 @@ function validateParsedOptions(options) {
     )
   }
 
+  if (
+    options.frameworkVersion &&
+    options.framework &&
+    options.framework !== "react"
+  ) {
+    throw new Error(
+      `Unsupported --framework-version for framework: ${options.framework}`
+    )
+  }
+
   if (!ALLOWED_TEST_RUNNERS.includes(options.testRunner)) {
     throw new Error(`Unsupported test runner: ${options.testRunner}`)
   }

@@ -29,7 +29,7 @@ list                                 List supported targets
 
 --framework <node|react|next|vue|svelte|nuxt>
                                       Target framework
---framework-version <major>          Optional framework major version hint
+--framework-version <major>          Optional major version hint (currently react only)
 --pm <pnpm|npm|yarn|auto>            Package manager (auto-detected by default)
 --features <lint,format,typescript,test,husky>
                                       Features to install (all selected by default)

@@ -4,15 +4,18 @@ import path from "node:path"
 
 const START_MARKER = "<!-- frontend-rules:skills:start -->"
 const END_MARKER = "<!-- frontend-rules:skills:end -->"
+const SKILLS_BASE_DIR = ".frontend-rules/skills"
 
 const FEATURE_SKILLS = {
   format: {
     name: "frontend-rules/format",
+    description: "Run and verify formatting rules.",
     when: "在提交前或大範圍改動後，統一格式化程式碼。",
     checklist: ["執行 format", "執行 format:check", "確認未變動非目標檔案"],
   },
   husky: {
     name: "frontend-rules/husky",
+    description: "Verify and maintain git hook automation.",
     when: "需要保證 pre-commit / pre-push 自動檢查時。",
     checklist: [
       "確認 hooks 可執行",
@@ -22,11 +25,13 @@ const FEATURE_SKILLS = {
   },
   lint: {
     name: "frontend-rules/lint",
+    description: "Run and validate lint rules.",
     when: "新增規則或調整工具鏈後，驗證 lint 一致性。",
     checklist: ["執行 lint", "執行 lint:check", "修正 max-warnings 問題"],
   },
   test: {
     name: "frontend-rules/test",
+    description: "Validate test runner setup and execution.",
     when: "新增測試規則或調整測試設定時。",
     checklist: [
       "確認 test runner 與專案一致",
@@ -36,6 +41,7 @@ const FEATURE_SKILLS = {
   },
   typescript: {
     name: "frontend-rules/typescript",
+    description: "Validate TypeScript strictness and config.",
     when: "調整 tsconfig 或型別嚴格度規則時。",
     checklist: [
       "執行 type-check",
@@ -59,12 +65,68 @@ function resolveSkillsDoc(projectDir) {
   return null
 }
 
-function buildSkillSection(context) {
-  const { enabledFeatures, testRunner } = context
-  const enabled = Object.entries(enabledFeatures)
+function getEnabledFeatures(enabledFeatures) {
+  return Object.entries(enabledFeatures)
     .filter(([, value]) => value)
     .map(([name]) => name)
     .sort((a, b) => a.localeCompare(b))
+}
+
+function getSkillRelativePath(feature) {
+  return `${SKILLS_BASE_DIR}/${feature}/SKILL.md`
+}
+
+function buildSkillFile(feature, skill, testRunner) {
+  const extra =
+    feature === "test"
+      ? `\n## Current Test Runner\n\n- \`${testRunner}\`\n`
+      : ""
+  return `---
+name: ${skill.name}
+description: ${skill.description}
+---
+
+# ${skill.name}
+
+## When To Use
+
+${skill.when}
+
+## Validation Checklist
+
+- ${skill.checklist.join("\n- ")}
+${extra}`
+}
+
+async function ensureSkillFiles(projectDir, enabled, testRunner, dryRun) {
+  for (const feature of enabled) {
+    const skill = FEATURE_SKILLS[feature]
+    if (!skill) continue
+
+    const relativePath = getSkillRelativePath(feature)
+    const fullPath = path.join(projectDir, relativePath)
+    const content = buildSkillFile(feature, skill, testRunner)
+
+    if (dryRun) {
+      console.log(`[dry-run] Would upsert ${relativePath}`)
+      continue
+    }
+
+    await fs.mkdir(path.dirname(fullPath), { recursive: true })
+    const current = existsSync(fullPath)
+      ? await fs.readFile(fullPath, "utf8")
+      : null
+    if (current === content) {
+      continue
+    }
+    await fs.writeFile(fullPath, content, "utf8")
+    console.log(`${current === null ? "Created" : "Updated"} ${relativePath}`)
+  }
+}
+
+function buildSkillSection(context) {
+  const { enabledFeatures, testRunner } = context
+  const enabled = getEnabledFeatures(enabledFeatures)
 
   const lines = [
     START_MARKER,
@@ -77,9 +139,10 @@ function buildSkillSection(context) {
   for (const feature of enabled) {
     const skill = FEATURE_SKILLS[feature]
     if (!skill) continue
+    const skillRelativePath = getSkillRelativePath(feature)
 
     lines.push(`### ${feature}`)
-    lines.push(`- Skill: \`${skill.name}\``)
+    lines.push(`- Skill: [${skill.name}](${skillRelativePath})`)
     lines.push(`- 使用時機: ${skill.when}`)
     if (feature === "test") {
       lines.push(`- 目前測試工具: \`${testRunner}\``)
@@ -121,6 +184,9 @@ export async function runAiSkillsRule(context) {
     return
   }
 
+  const enabled = getEnabledFeatures(context.enabledFeatures)
+  await ensureSkillFiles(projectDir, enabled, context.testRunner, dryRun)
+
   const section = buildSkillSection(context)
   const current = await fs.readFile(targetFile, "utf8")
   const updated = upsertSkillSection(current, section)
@@ -145,6 +211,10 @@ export async function runAiSkillsRule(context) {
 
 export const __testables__ = {
   buildSkillSection,
+  buildSkillFile,
+  ensureSkillFiles,
+  getEnabledFeatures,
+  getSkillRelativePath,
   resolveSkillsDoc,
   upsertSkillSection,
 }

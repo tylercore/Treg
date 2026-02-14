@@ -52,6 +52,13 @@ export async function main(argv = process.argv.slice(2)) {
     options.frameworkVersion,
     packageJson
   )
+  if (options.frameworkVersion && framework.id !== "react") {
+    console.error(
+      `Unsupported --framework-version for framework: ${framework.id}`
+    )
+    process.exitCode = 1
+    return
+  }
   const enabledFeatures = resolveFeatures(options)
 
   const context = {

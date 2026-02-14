@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs"
 import path from "node:path"
-import { install } from "../mrm-core.mjs"
+import { installPackages as installByPackageManager } from "../package-manager.mjs"
 
 export function withProjectCwd(projectDir, fn) {
   const original = process.cwd()
@@ -26,15 +26,7 @@ export function installPackages(
   dryRun = false
 ) {
   if (packages.length === 0) return
-  if (dryRun) {
-    console.log(
-      `[dry-run] Would install ${dev ? "dev " : ""}dependencies: ${packages.join(", ")}`
-    )
-    return
-  }
-  withProjectCwd(projectDir, () => {
-    install(packages, { ...getInstallOptions(pm), dev })
-  })
+  installByPackageManager(pm, projectDir, packages, dev, dryRun)
 }
 
 export async function writeFile(
