@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals"
-import { detectFramework, resolveFramework } from "./frameworks.mjs"
+import { detectFramework, resolveFramework } from "./frameworks/index.mjs"
 
 describe("frameworks", () => {
   it("detects react from dependencies", () => {

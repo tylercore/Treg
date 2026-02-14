@@ -7,7 +7,7 @@ import {
   resolveFeatures,
   USAGE,
 } from "./cli.mjs"
-import { resolveFramework } from "./frameworks.mjs"
+import { resolveFramework } from "./frameworks/index.mjs"
 import { runFeatureRules } from "./mrm-rules/index.mjs"
 import { detectPackageManager, runScript } from "./package-manager.mjs"
 import { formatStep } from "./utils.mjs"
