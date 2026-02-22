@@ -2,19 +2,19 @@ import { existsSync } from "node:fs"
 import { promises as fs } from "node:fs"
 import path from "node:path"
 
-const START_MARKER = "<!-- frontend-rules:skills:start -->"
-const END_MARKER = "<!-- frontend-rules:skills:end -->"
-const SKILLS_BASE_DIR = ".frontend-rules/skills"
+const START_MARKER = "<!-- treg:skills:start -->"
+const END_MARKER = "<!-- treg:skills:end -->"
+const SKILLS_BASE_DIR = ".treg/skills"
 
 const FEATURE_SKILLS = {
   format: {
-    name: "frontend-rules/format",
+    name: "treg/format",
     description: "Run and verify formatting rules.",
     when: "在提交前或大範圍改動後，統一格式化程式碼。",
     checklist: ["執行 format", "執行 format:check", "確認未變動非目標檔案"],
   },
   husky: {
-    name: "frontend-rules/husky",
+    name: "treg/husky",
     description: "Verify and maintain git hook automation.",
     when: "需要保證 pre-commit / pre-push 自動檢查時。",
     checklist: [
@@ -24,13 +24,13 @@ const FEATURE_SKILLS = {
     ],
   },
   lint: {
-    name: "frontend-rules/lint",
+    name: "treg/lint",
     description: "Run and validate lint rules.",
     when: "新增規則或調整工具鏈後，驗證 lint 一致性。",
     checklist: ["執行 lint", "執行 lint:check", "修正 max-warnings 問題"],
   },
   test: {
-    name: "frontend-rules/test",
+    name: "treg/test",
     description: "Validate test runner setup and execution.",
     when: "新增測試規則或調整測試設定時。",
     checklist: [
@@ -40,7 +40,7 @@ const FEATURE_SKILLS = {
     ],
   },
   typescript: {
-    name: "frontend-rules/typescript",
+    name: "treg/typescript",
     description: "Validate TypeScript strictness and config.",
     when: "調整 tsconfig 或型別嚴格度規則時。",
     checklist: [
@@ -130,7 +130,7 @@ function buildSkillSection(context) {
 
   const lines = [
     START_MARKER,
-    "## frontend-rules AI Skills",
+    "## treg AI Skills",
     "",
     "以下 skill 可在 agent 任務完成前引用，確保基礎建設規則正確且可重跑：",
     "",

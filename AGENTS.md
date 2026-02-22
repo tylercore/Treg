@@ -2,7 +2,7 @@
 
 ## Project scope
 
-- 這個專案是 `frontend-rules` CLI，定位為「基礎建設工具」。
+- 這個專案是 `treg` CLI，定位為「基礎建設工具」。
 - 僅處理工具鏈與專案規範（lint、format、typescript、test、husky、ai-skills）。
 - 禁止加入產品功能、頁面、API、商業邏輯。
 

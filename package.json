@@ -1,9 +1,9 @@
 {
-  "name": "frontend-rules",
+  "name": "treg",
   "version": "0.1.1",
-  "description": "Bootstrap consistent frontend tooling into an existing project.",
+  "description": "CLI tool for initializing development conventions in existing projects.",
   "bin": {
-    "frontend-rules": "./scripts/init-project.mjs"
+    "treg": "./scripts/init-project.mjs"
   },
   "files": [
     "scripts/init-project.mjs",

@@ -18,7 +18,7 @@ describe("ai-skills helpers", () => {
       testRunner: "vitest",
     })
 
-    expect(content).toContain("## frontend-rules AI Skills")
+    expect(content).toContain("## treg AI Skills")
     expect(content).toContain("### format")
     expect(content).toContain("### lint")
     expect(content).toContain("### test")
@@ -28,8 +28,8 @@ describe("ai-skills helpers", () => {
 
   it("upserts an existing skill section", () => {
     const replaced = __testables__.upsertSkillSection(
-      "# Header\n\n<!-- frontend-rules:skills:start -->\nold\n<!-- frontend-rules:skills:end -->\n",
-      "<!-- frontend-rules:skills:start -->\nnew\n<!-- frontend-rules:skills:end -->"
+      "# Header\n\n<!-- treg:skills:start -->\nold\n<!-- treg:skills:end -->\n",
+      "<!-- treg:skills:start -->\nnew\n<!-- treg:skills:end -->"
     )
 
     expect(replaced).toContain("new")
@@ -37,7 +37,7 @@ describe("ai-skills helpers", () => {
   })
 
   it("prefers AGENTS.md when both docs exist", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "frontend-rules-skill-"))
+    const dir = mkdtempSync(path.join(tmpdir(), "treg-skill-"))
     try {
       writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
       writeFileSync(path.join(dir, "CLAUDE.md"), "# Claude\n", "utf8")
@@ -54,7 +54,7 @@ describe("ai-skills helpers", () => {
     const content = __testables__.buildSkillFile(
       "test",
       {
-        name: "frontend-rules/test",
+        name: "treg/test",
         description: "Validate test runner setup and execution.",
         when: "新增測試規則或調整測試設定時。",
         checklist: ["確認 test runner 與專案一致", "執行 test"],
@@ -62,27 +62,27 @@ describe("ai-skills helpers", () => {
       "vitest"
     )
 
-    expect(content).toContain("name: frontend-rules/test")
+    expect(content).toContain("name: treg/test")
     expect(content).toContain("description: Validate test runner setup")
     expect(content).toContain("## Current Test Runner")
     expect(content).toContain("`vitest`")
   })
 
   it("creates skill files for enabled features", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "frontend-rules-skill-files-"))
+    const dir = mkdtempSync(path.join(tmpdir(), "treg-skill-files-"))
     try {
       await __testables__.ensureSkillFiles(dir, ["lint", "test"], "jest", false)
 
       const lintSkill = await readFile(
-        path.join(dir, ".frontend-rules/skills/lint/SKILL.md"),
+        path.join(dir, ".treg/skills/lint/SKILL.md"),
         "utf8"
       )
       const testSkill = await readFile(
-        path.join(dir, ".frontend-rules/skills/test/SKILL.md"),
+        path.join(dir, ".treg/skills/test/SKILL.md"),
         "utf8"
       )
 
-      expect(lintSkill).toContain("name: frontend-rules/lint")
+      expect(lintSkill).toContain("name: treg/lint")
       expect(testSkill).toContain("## Current Test Runner")
     } finally {
       rmSync(dir, { recursive: true, force: true })

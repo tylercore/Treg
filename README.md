@@ -1,13 +1,17 @@
-# frontend-rules
+# treg
 
-`frontend-rules` is a CLI that bootstraps project infra rules into an existing repository.
+Treg is a CLI tool for initializing development conventions in existing projects.
+
+It installs and configures tools and records clear usage guidelines as skills.
+
+Treg helps both human developers and AI agents work within the same set of expectations, reducing configuration drift and long-term maintenance overhead.
 
 ## Usage
 
 ```bash
-pnpm dlx frontend-rules init <project-dir> --framework react
+pnpm dlx treg init <project-dir> --framework react
 # or
-npx frontend-rules init <project-dir> --framework react
+npx treg init <project-dir> --framework react
 ```
 
 By default, all features are applied:
@@ -21,7 +25,7 @@ By default, all features are applied:
 ## Options
 
 ```bash
-frontend-rules <command> [projectDir] [options]
+treg <command> [projectDir] [options]
 
 init                                 Initialize infra rules (requires --framework)
 add                                  Add selected infra features
@@ -46,37 +50,37 @@ list                                 List supported targets
 Initialize a React project:
 
 ```bash
-frontend-rules init . --framework react
+treg init . --framework react
 ```
 
 Add only lint and format:
 
 ```bash
-frontend-rules add . --features lint,format
+treg add . --features lint,format
 ```
 
 Use Vitest:
 
 ```bash
-frontend-rules init . --framework node --features test --test-runner vitest
+treg init . --framework node --features test --test-runner vitest
 ```
 
 Set framework major version explicitly (for variant rules):
 
 ```bash
-frontend-rules init . --framework react --framework-version 18
+treg init . --framework react --framework-version 18
 ```
 
 Preview changes only:
 
 ```bash
-frontend-rules init . --framework react --dry-run
+treg init . --framework react --dry-run
 ```
 
 Enable AI skill guidance update:
 
 ```bash
-frontend-rules add . --features lint,format,husky --skills
+treg add . --features lint,format,husky --skills
 ```
 
 ## Publish

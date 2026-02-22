@@ -4,7 +4,7 @@ const ALLOWED_FRAMEWORKS = ["node", "react", "next", "vue", "svelte", "nuxt"]
 const ALLOWED_FEATURES = ["lint", "format", "typescript", "test", "husky"]
 const ALLOWED_TEST_RUNNERS = ["jest", "vitest"]
 
-export const USAGE = `Usage: frontend-rules <command> [projectDir] [options]
+export const USAGE = `Usage: treg <command> [projectDir] [options]
 
 Commands:
   init                                Initialize infra rules in a project (requires --framework)

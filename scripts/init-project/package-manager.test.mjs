@@ -6,12 +6,12 @@ import { detectPackageManager } from "./package-manager.mjs"
 
 describe("detectPackageManager", () => {
   it("defaults to npm when no lockfile exists", async () => {
-    const baseDir = await mkdtemp(path.join(os.tmpdir(), "react-rules-pm-"))
+    const baseDir = await mkdtemp(path.join(os.tmpdir(), "treg-pm-"))
     expect(detectPackageManager(baseDir)).toBe("npm")
   })
 
   it("detects pnpm from lockfile", async () => {
-    const baseDir = await mkdtemp(path.join(os.tmpdir(), "react-rules-pm-"))
+    const baseDir = await mkdtemp(path.join(os.tmpdir(), "treg-pm-"))
     await writeFile(
       path.join(baseDir, "pnpm-lock.yaml"),
       "lockfileVersion: 9\n"
