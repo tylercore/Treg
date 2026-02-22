@@ -2,6 +2,7 @@
   "name": "treg",
   "version": "0.1.1",
   "description": "CLI tool for initializing development conventions in existing projects.",
+  "license": "MIT",
   "bin": {
     "treg": "./scripts/init-project.mjs"
   },
