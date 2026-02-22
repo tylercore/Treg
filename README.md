@@ -1,4 +1,4 @@
-# treg
+# @tyyyho/treg
 
 Treg is a CLI tool for initializing development conventions in existing projects.
 
@@ -9,9 +9,9 @@ Treg helps both human developers and AI agents work within the same set of expec
 ## Usage
 
 ```bash
-pnpm dlx treg init <project-dir> --framework react
+pnpm dlx @tyyyho/treg init <project-dir> --framework react
 # or
-npx treg init <project-dir> --framework react
+npx @tyyyho/treg init <project-dir> --framework react
 ```
 
 By default, all features are applied:
@@ -25,7 +25,7 @@ By default, all features are applied:
 ## Options
 
 ```bash
-treg <command> [projectDir] [options]
+npx @tyyyho/treg <command> [projectDir] [options]
 
 init                                 Initialize infra rules (requires --framework)
 add                                  Add selected infra features
@@ -50,37 +50,37 @@ list                                 List supported targets
 Initialize a React project:
 
 ```bash
-treg init . --framework react
+npx @tyyyho/treg init . --framework react
 ```
 
 Add only lint and format:
 
 ```bash
-treg add . --features lint,format
+npx @tyyyho/treg add . --features lint,format
 ```
 
 Use Vitest:
 
 ```bash
-treg init . --framework node --features test --test-runner vitest
+npx @tyyyho/treg init . --framework node --features test --test-runner vitest
 ```
 
 Set framework major version explicitly (for variant rules):
 
 ```bash
-treg init . --framework react --framework-version 18
+npx @tyyyho/treg init . --framework react --framework-version 18
 ```
 
 Preview changes only:
 
 ```bash
-treg init . --framework react --dry-run
+npx @tyyyho/treg init . --framework react --dry-run
 ```
 
 Enable AI skill guidance update:
 
 ```bash
-treg add . --features lint,format,husky --skills
+npx @tyyyho/treg add . --features lint,format,husky --skills
 ```
 
 ## Publish

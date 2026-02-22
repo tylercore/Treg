@@ -1,5 +1,5 @@
 {
-  "name": "treg",
+  "name": "@tyyyho/treg",
   "version": "0.1.1",
   "description": "CLI tool for initializing development conventions in existing projects.",
   "license": "MIT",
