@@ -1,0 +1,42 @@
+{
+  "name": "@tyyyho/treg",
+  "version": "0.1.2",
+  "description": "CLI tool for initializing development conventions in existing projects.",
+  "license": "MIT",
+  "bin": {
+    "treg": "./scripts/init-project.mjs"
+  },
+  "files": [
+    "scripts/init-project.mjs",
+    "scripts/init-project"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "lint:check": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "tsc --noEmit",
+    "prepare": "husky",
+    "prepublishOnly": "pnpm format:check && pnpm lint:check && pnpm type-check && pnpm test"
+  },
+  "dependencies": {
+    "mrm-core": "^7.1.22"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "^9",
+    "husky": "^9.1.7",
+    "jest": "^30.2.0",
+    "prettier": "^3.8.0",
+    "typescript": "^5"
+  }
+}
