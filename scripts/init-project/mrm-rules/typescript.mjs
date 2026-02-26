@@ -2,6 +2,8 @@ import { json, packageJson } from "../mrm-core.mjs"
 import { installPackages, withProjectCwd } from "./shared.mjs"
 
 const TS_REQUIRED_OPTIONS = {
+  strict: true,
+  strictNullChecks: true,
   noImplicitAny: true,
   noImplicitThis: true,
   exactOptionalPropertyTypes: true,
