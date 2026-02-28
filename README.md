@@ -6,9 +6,9 @@ It applies infra setup such as lint, format, TypeScript, test, husky, and AI ski
 ## Quick Start
 
 ```bash
-pnpm dlx @tyyyho/treg init <project-dir> --framework react
+pnpm dlx @tyyyho/treg init --framework react
 # or
-npx @tyyyho/treg init <project-dir> --framework react
+npx @tyyyho/treg init --framework react
 ```
 
 `init` requires `--framework`.
@@ -16,7 +16,7 @@ npx @tyyyho/treg init <project-dir> --framework react
 ## Commands
 
 ```bash
-npx @tyyyho/treg <command> [projectDir] [options]
+npx @tyyyho/treg <command> [options]
 ```
 
 - `init`: Initialize infra rules (requires `--framework`)
@@ -28,12 +28,14 @@ npx @tyyyho/treg <command> [projectDir] [options]
 - `--framework <node|react|next|vue|svelte|nuxt>`: Target framework
 - `--framework-version <major>`: Optional major version hint (react only)
 - `--features <lint,format,typescript,test,husky>`: Features to install (defaults to all)
+- `--dir <path>`: Target directory (defaults to current directory)
 - `--test-runner <jest|vitest>`: Test runner when test feature is enabled
 - `--pm <pnpm|npm|yarn|auto>`: Package manager (auto-detected by default)
 - `--force`: Overwrite existing config files
 - `--dry-run`: Print full plan without writing files
 - `--skip-husky-install`: Skip husky install command
-- `--skills`: Update existing `AGENTS.md`/`CLAUDE.md` with skill guidance
+- `--skills`: Update existing `AGENTS.md`/`CLAUDE.md` with skill guidance (enabled by default)
+- `--no-skills`: Disable skill guidance updates
 - `--help`: Show help
 
 ## Features
@@ -51,37 +53,43 @@ Default feature set:
 Initialize a React project:
 
 ```bash
-npx @tyyyho/treg init . --framework react
+npx @tyyyho/treg init --framework react
 ```
 
 Add only lint + format:
 
 ```bash
-npx @tyyyho/treg add . --features lint,format
+npx @tyyyho/treg add --features lint,format
 ```
 
 Use Vitest for test feature:
 
 ```bash
-npx @tyyyho/treg init . --framework node --features test --test-runner vitest
+npx @tyyyho/treg init --framework node --features test --test-runner vitest
 ```
 
 Use react major version variant:
 
 ```bash
-npx @tyyyho/treg init . --framework react --framework-version 18
+npx @tyyyho/treg init --framework react --framework-version 18
 ```
 
 Preview changes only:
 
 ```bash
-npx @tyyyho/treg init . --framework react --dry-run
+npx @tyyyho/treg init --framework react --dry-run
 ```
 
 Update AI skill guidance:
 
 ```bash
-npx @tyyyho/treg add . --features lint,format,husky --skills
+npx @tyyyho/treg add --features lint,format,husky
+```
+
+Target a different directory explicitly:
+
+```bash
+npx @tyyyho/treg init --framework react --dir ./packages/web
 ```
 
 ## Notes

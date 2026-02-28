@@ -5,6 +5,7 @@ describe("parseArgs", () => {
   it("parses init command options", () => {
     const parsed = parseArgs([
       "init",
+      "--dir",
       "demo-app",
       "--framework",
       "react",
@@ -29,7 +30,7 @@ describe("parseArgs", () => {
       force: true,
       dryRun: true,
       skipHuskyInstall: true,
-      skills: false,
+      skills: true,
       help: false,
     })
   })
@@ -44,9 +45,14 @@ describe("parseArgs", () => {
     expect(parsed.framework).toBe("nuxt")
   })
 
-  it("parses skills flag", () => {
-    const parsed = parseArgs(["add", "--skills"])
+  it("enables skills by default", () => {
+    const parsed = parseArgs(["add"])
     expect(parsed.skills).toBe(true)
+  })
+
+  it("supports disabling skills via --no-skills", () => {
+    const parsed = parseArgs(["add", "--no-skills"])
+    expect(parsed.skills).toBe(false)
   })
 
   it("accepts svelte framework", () => {
@@ -64,6 +70,10 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["init", "--framework", "angular"])).toThrow(
       "Unsupported framework: angular"
     )
+  })
+
+  it("throws for positional dir argument", () => {
+    expect(() => parseArgs(["add", "."])).toThrow("Unknown argument: .")
   })
 
   it("throws for unsupported feature", () => {

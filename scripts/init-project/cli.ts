@@ -4,7 +4,7 @@ const ALLOWED_FRAMEWORKS = ["node", "react", "next", "vue", "svelte", "nuxt"]
 const ALLOWED_FEATURES = ["lint", "format", "typescript", "test", "husky"]
 const ALLOWED_TEST_RUNNERS = ["jest", "vitest"]
 
-export const USAGE = `Usage: treg <command> [projectDir] [options]
+export const USAGE = `Usage: treg <command> [options]
 
 Commands:
   init                                Initialize infra rules in a project (requires --framework)
@@ -17,12 +17,14 @@ Options:
   --framework-version <major>         Optional framework major version hint
   --features <lint,format,typescript,test,husky>
                                       Features to install (all selected by default)
+  --dir <path>                        Target directory (defaults to current directory)
   --test-runner <jest|vitest>         Test runner when test feature is enabled
   --pm <pnpm|npm|yarn|auto>           Package manager (auto-detected if omitted)
   --force                             Overwrite existing config files
   --dry-run                           Print planned changes without writing files
   --skip-husky-install                Do not run husky install
-  --skills                            Update AGENTS.md/CLAUDE.md with feature skill guidance
+  --skills                            Update AGENTS.md/CLAUDE.md with feature skill guidance (default: enabled)
+  --no-skills                         Disable AGENTS.md/CLAUDE.md skill guidance updates
   -h, --help                          Show help
 `
 
@@ -38,7 +40,7 @@ export function parseArgs(argv) {
     force: false,
     dryRun: false,
     skipHuskyInstall: false,
-    skills: false,
+    skills: true,
     help: false,
   }
 
@@ -68,6 +70,11 @@ export function parseArgs(argv) {
       i += 1
     } else if (arg.startsWith("--features=")) {
       options.features.push(...parseCsvValue(arg.split("=")[1], "--features"))
+    } else if (arg === "--dir") {
+      options.projectDir = argv[i + 1]
+      i += 1
+    } else if (arg.startsWith("--dir=")) {
+      options.projectDir = arg.split("=")[1]
     } else if (arg === "--test-runner") {
       options.testRunner = argv[i + 1]
       i += 1
@@ -86,8 +93,8 @@ export function parseArgs(argv) {
       options.skipHuskyInstall = true
     } else if (arg === "--skills") {
       options.skills = true
-    } else if (!arg.startsWith("-") && !options.projectDir) {
-      options.projectDir = arg
+    } else if (arg === "--no-skills") {
+      options.skills = false
     } else {
       throw new Error(`Unknown argument: ${arg}`)
     }
@@ -111,6 +118,10 @@ function parseCsvValue(rawValue, flagName) {
 function validateParsedOptions(options) {
   if (!ALLOWED_COMMANDS.includes(options.command)) {
     throw new Error(`Unsupported command: ${options.command}`)
+  }
+
+  if (options.projectDir === undefined || options.projectDir === "") {
+    throw new Error("Missing value for --dir")
   }
 
   if (options.pm && !ALLOWED_PACKAGE_MANAGERS.includes(options.pm)) {
