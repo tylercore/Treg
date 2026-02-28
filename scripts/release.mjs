@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import path from "node:path"
 
 const ALLOWED_TARGETS = new Set([
   "patch",
@@ -58,6 +61,35 @@ function ensureCleanWorkingTree() {
   }
 }
 
+function runCiValidation() {
+  console.log("[release] Running CI validation steps")
+  run("pnpm", ["format:check"])
+  run("pnpm", ["lint:check"])
+  run("pnpm", ["type-check"])
+  run("pnpm", ["test"])
+  run("pnpm", ["build"])
+
+  const smokeDir = mkdtempSync(path.join(tmpdir(), "treg-release-ci-"))
+  try {
+    writeFileSync(
+      path.join(smokeDir, "package.json"),
+      '{ "name": "release-smoke", "version": "1.0.0" }\n',
+      "utf8"
+    )
+    run("node", [
+      "dist/init-project.js",
+      "init",
+      "--dir",
+      smokeDir,
+      "--framework",
+      "node",
+      "--dry-run",
+    ])
+  } finally {
+    rmSync(smokeDir, { recursive: true, force: true })
+  }
+}
+
 const input = process.argv[2]
 if (input === "--help" || input === "-h") {
   printUsage()
@@ -71,6 +103,8 @@ if (!ALLOWED_TARGETS.has(releaseTarget) && !EXACT_SEMVER.test(releaseTarget)) {
 }
 
 ensureMainBranch()
+ensureCleanWorkingTree()
+runCiValidation()
 ensureCleanWorkingTree()
 
 console.log(`[release] Bumping version with target: ${releaseTarget}`)
