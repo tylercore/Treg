@@ -25,6 +25,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
+    "release": "node scripts/release.mjs",
     "prepare": "husky",
     "prepublishOnly": "pnpm format:check && pnpm lint:check && pnpm type-check && pnpm test"
   },

@@ -1,12 +1,9 @@
 # @tyyyho/treg
 
-Treg is a CLI tool for initializing development conventions in existing projects.
+`treg` is a CLI for quickly setting up project tooling conventions in an existing repository.
+It applies infra setup such as lint, format, TypeScript, test, husky, and AI skill guidance.
 
-It installs and configures tools and records clear usage guidelines as skills.
-
-Treg helps both human developers and AI agents work within the same set of expectations, reducing configuration drift and long-term maintenance overhead.
-
-## Usage
+## Quick Start
 
 ```bash
 pnpm dlx @tyyyho/treg init <project-dir> --framework react
@@ -14,36 +11,40 @@ pnpm dlx @tyyyho/treg init <project-dir> --framework react
 npx @tyyyho/treg init <project-dir> --framework react
 ```
 
-By default, all features are applied:
+`init` requires `--framework`.
+
+## Commands
+
+```bash
+npx @tyyyho/treg <command> [projectDir] [options]
+```
+
+- `init`: Initialize infra rules (requires `--framework`)
+- `add`: Add selected infra features to an existing project
+- `list`: List supported frameworks, features, and test runners
+
+## Options
+
+- `--framework <node|react|next|vue|svelte|nuxt>`: Target framework
+- `--framework-version <major>`: Optional major version hint (react only)
+- `--features <lint,format,typescript,test,husky>`: Features to install (defaults to all)
+- `--test-runner <jest|vitest>`: Test runner when test feature is enabled
+- `--pm <pnpm|npm|yarn|auto>`: Package manager (auto-detected by default)
+- `--force`: Overwrite existing config files
+- `--dry-run`: Print full plan without writing files
+- `--skip-husky-install`: Skip husky install command
+- `--skills`: Update existing `AGENTS.md`/`CLAUDE.md` with skill guidance
+- `--help`: Show help
+
+## Features
+
+Default feature set:
 
 - `husky`
 - `typescript`
 - `lint`
 - `format`
 - `test`
-
-## Options
-
-```bash
-npx @tyyyho/treg <command> [projectDir] [options]
-
-init                                 Initialize infra rules (requires --framework)
-add                                  Add selected infra features
-list                                 List supported targets
-
---framework <node|react|next|vue|svelte|nuxt>
-                                      Target framework
---framework-version <major>          Optional major version hint (currently react only)
---pm <pnpm|npm|yarn|auto>            Package manager (auto-detected by default)
---features <lint,format,typescript,test,husky>
-                                      Features to install (all selected by default)
---test-runner <jest|vitest>          Test runner when test feature is enabled
---force                               Overwrite existing config files
---dry-run                             Show planned changes without writing files
---skip-husky-install                  Do not run husky install
---skills                              Update AGENTS.md/CLAUDE.md with feature skill guidance
---help                                Show help
-```
 
 ## Examples
 
@@ -53,19 +54,19 @@ Initialize a React project:
 npx @tyyyho/treg init . --framework react
 ```
 
-Add only lint and format:
+Add only lint + format:
 
 ```bash
 npx @tyyyho/treg add . --features lint,format
 ```
 
-Use Vitest:
+Use Vitest for test feature:
 
 ```bash
 npx @tyyyho/treg init . --framework node --features test --test-runner vitest
 ```
 
-Set framework major version explicitly (for variant rules):
+Use react major version variant:
 
 ```bash
 npx @tyyyho/treg init . --framework react --framework-version 18
@@ -77,16 +78,14 @@ Preview changes only:
 npx @tyyyho/treg init . --framework react --dry-run
 ```
 
-Enable AI skill guidance update:
+Update AI skill guidance:
 
 ```bash
 npx @tyyyho/treg add . --features lint,format,husky --skills
 ```
 
-## Publish
+## Notes
 
-```bash
-pnpm install
-pnpm run prepublishOnly
-npm publish --access public
-```
+- `init` requires `--framework`.
+- `add` lets you install only the features you specify.
+- `--dry-run` prints the full plan and does not write files.
