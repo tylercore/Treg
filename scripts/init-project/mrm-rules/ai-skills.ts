@@ -1,12 +1,13 @@
-import { existsSync } from "node:fs"
-import { promises as fs } from "node:fs"
-import path from "node:path"
 import type {
   EnabledFeatures,
   FeatureName,
   RuleContext,
   TestRunner,
 } from "../types.ts"
+
+import { existsSync } from "node:fs"
+import { promises as fs } from "node:fs"
+import path from "node:path"
 
 const START_MARKER = "<!-- treg:skills:start -->"
 const END_MARKER = "<!-- treg:skills:end -->"
@@ -62,6 +63,14 @@ const FEATURE_SKILLS: Record<FeatureName, SkillDefinition> = {
       "檢查 exclude 不含產品邏輯路徑",
     ],
   },
+}
+
+const FEATURE_STEP_LABELS = {
+  format: "格式處理",
+  husky: "Git hook 維護",
+  lint: "Lint 規則檢查",
+  test: "測試規則調整",
+  typescript: "TypeScript 型別與設定",
 }
 
 function resolveSkillsDoc(projectDir: string): string | null {
@@ -156,24 +165,32 @@ function buildSkillSection(
     START_MARKER,
     "## treg AI Skills",
     "",
-    "以下 skill 可在 agent 任務完成前引用，確保基礎建設規則正確且可重跑：",
+    "### 執行步驟與 Skill 對應",
     "",
   ]
 
-  for (const feature of enabled) {
-    const skill = FEATURE_SKILLS[feature]
-    if (!skill) continue
-    const skillRelativePath = getSkillRelativePath(feature)
-
-    lines.push(`### ${feature}`)
-    lines.push(`- Skill: [${skill.name}](${skillRelativePath})`)
-    lines.push(`- 使用時機: ${skill.when}`)
-    if (feature === "test") {
-      lines.push(`- 目前測試工具: \`${testRunner}\``)
-    }
-    lines.push(`- 驗證清單: ${skill.checklist.join("、")}`)
+  if (enabled.length === 0) {
+    lines.push("1. 本次未啟用任何 feature，無需呼叫 skill。")
     lines.push("")
+    lines.push(END_MARKER)
+    lines.push("")
+    return lines.join("\n")
   }
+
+  enabled.forEach((feature, index) => {
+    const skill = FEATURE_SKILLS[feature]
+    if (!skill) return
+    const skillRelativePath = getSkillRelativePath(feature)
+    const stepLabel = FEATURE_STEP_LABELS[feature] ?? feature
+
+    lines.push(
+      `${index + 1}. ${stepLabel}：呼叫 [${skill.name}](${skillRelativePath})`
+    )
+    if (feature === "test") {
+      lines.push(`   - 目前測試工具：\`${testRunner}\``)
+    }
+  })
+  lines.push("")
 
   lines.push(END_MARKER)
   lines.push("")

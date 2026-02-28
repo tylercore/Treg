@@ -19,11 +19,18 @@ describe("ai-skills helpers", () => {
     })
 
     expect(content).toContain("## treg AI Skills")
-    expect(content).toContain("### format")
-    expect(content).toContain("### lint")
-    expect(content).toContain("### test")
-    expect(content).toContain("目前測試工具: `vitest`")
-    expect(content).not.toContain("### typescript")
+    expect(content).toContain("### 執行步驟與 Skill 對應")
+    expect(content).toContain(
+      "1. 格式處理：呼叫 [treg/format](skills/format/SKILL.md)"
+    )
+    expect(content).toContain(
+      "2. Lint 規則檢查：呼叫 [treg/lint](skills/lint/SKILL.md)"
+    )
+    expect(content).toContain(
+      "3. 測試規則調整：呼叫 [treg/test](skills/test/SKILL.md)"
+    )
+    expect(content).toContain("目前測試工具：`vitest`")
+    expect(content).not.toContain("TypeScript 型別與設定")
   })
 
   it("upserts an existing skill section", () => {
