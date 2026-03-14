@@ -1,0 +1,63 @@
+name: Verify
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version to run checks on.
+        required: false
+        type: string
+        default: "20"
+      run-smoke-test:
+        description: Whether to run CLI dry-run smoke test.
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  verify:
+    name: Verify (Node ${{ inputs.node-version }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          HUSKY: 0
+
+      - name: Check format
+        run: pnpm format:check
+
+      - name: Check lint
+        run: pnpm lint:check
+
+      - name: Check types
+        run: pnpm type-check
+
+      - name: Build (TS to JS)
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: CLI smoke test (dry run)
+        if: ${{ inputs.run-smoke-test }}
+        run: |
+          tmpdir="$(mktemp -d)"
+          cat > "$tmpdir/package.json" <<'JSON'
+          { "name": "ci-smoke", "version": "1.0.0" }
+          JSON
+          node dist/init-project.js init --dir "$tmpdir" --framework node --dry-run
