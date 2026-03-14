@@ -1,5 +1,7 @@
 # @tyyyho/treg
 
+[繁體中文 README](./README.zh-TW.md)
+
 `treg` is a CLI for quickly setting up project tooling conventions in an existing repository.
 It applies infra setup such as lint, format, TypeScript, test, husky, and AI skill guidance.
 
