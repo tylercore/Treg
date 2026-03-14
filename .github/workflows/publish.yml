@@ -1,28 +1,27 @@
 name: Publish to npm
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
+  verify:
+    uses: ./.github/workflows/_verify.yml
+    with:
+      node-version: "20"
+
   publish:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      startsWith(github.event.workflow_run.head_branch, 'v')
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -47,8 +46,7 @@ jobs:
       - name: Verify tag matches package version
         run: |
           package_version="$(node -p "require('./package.json').version")"
-          tag_version="${{ github.event.workflow_run.head_branch }}"
-          tag_version="${tag_version#v}"
+          tag_version="${GITHUB_REF_NAME#v}"
           if [ "$package_version" != "$tag_version" ]; then
             echo "Tag version ($tag_version) does not match package.json version ($package_version)."
             exit 1
@@ -59,10 +57,8 @@ jobs:
         env:
           HUSKY: 0
 
-      - name: Run publish checks
-        run: pnpm run prepublishOnly
+      - name: Build package
+        run: pnpm build
 
       - name: Publish to npm (Trusted publishing)
-        run: npm publish --registry https://registry.npmjs.org --access public --provenance
-        env:
-          HUSKY: 0
+        run: npm publish --registry https://registry.npmjs.org --access public --provenance --ignore-scripts
