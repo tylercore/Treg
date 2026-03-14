@@ -19,7 +19,6 @@ export interface PackageJson {
 
 export interface Framework {
   id: FrameworkId
-  variant?: string
   testEnvironment: TestEnvironment
   tsRequiredExcludes: string[]
 }
@@ -40,7 +39,6 @@ export interface ParsedOptions {
   command: CommandName
   projectDir: string | null
   framework: FrameworkId | null
-  frameworkVersion: string | null
   features: FeatureName[]
   testRunner: TestRunner
   pm: PackageManagerOption | null

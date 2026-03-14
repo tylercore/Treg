@@ -37,27 +37,25 @@ describe("frameworks", () => {
 
   it("resolves explicit framework", () => {
     expect(
-      resolveFramework("node", null, { dependencies: { react: "19.0.0" } }).id
+      resolveFramework("node", { dependencies: { react: "19.0.0" } }).id
     ).toBe("node")
   })
 
   it("resolves explicit nuxt framework", () => {
-    expect(resolveFramework("nuxt", null, { dependencies: {} }).id).toBe("nuxt")
+    expect(resolveFramework("nuxt", { dependencies: {} }).id).toBe("nuxt")
   })
 
-  it("resolves react v18 from --framework-version", () => {
-    const framework = resolveFramework("react", "18", {
+  it("resolves explicit react framework", () => {
+    const framework = resolveFramework("react", {
       dependencies: { react: "^19.0.0" },
     })
     expect(framework.id).toBe("react")
-    expect(framework.variant).toBe("v18")
   })
 
-  it("resolves detected react v19 from package version", () => {
-    const framework = resolveFramework(null, null, {
+  it("resolves detected react framework", () => {
+    const framework = resolveFramework(null, {
       dependencies: { react: "^19.2.0" },
     })
     expect(framework.id).toBe("react")
-    expect(framework.variant).toBe("v19")
   })
 })

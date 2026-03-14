@@ -42,7 +42,6 @@ Commands:
 Options:
   --framework <node|react|next|vue|svelte|nuxt>
                                       Target framework
-  --framework-version <major>         Optional framework major version hint
   --features <lint,format,typescript,test,husky>
                                       Features to install (all selected by default)
   --dir <path>                        Target directory (defaults to current directory)
@@ -60,7 +59,6 @@ interface RawParsedOptions {
   command: string
   projectDir: string | null
   framework: string | null
-  frameworkVersion: string | null
   features: string[]
   testRunner: string
   pm: string | null
@@ -103,7 +101,6 @@ export function parseArgs(argv: string[]): ParsedOptions {
     command: "init",
     projectDir: null,
     framework: null,
-    frameworkVersion: null,
     features: [],
     testRunner: "jest",
     pm: null,
@@ -134,11 +131,6 @@ export function parseArgs(argv: string[]): ParsedOptions {
       i += 1
     } else if (arg.startsWith("--framework=")) {
       options.framework = readInlineFlagValue(arg, "--framework")
-    } else if (arg === "--framework-version") {
-      options.frameworkVersion = readFlagValue(argv, i, "--framework-version")
-      i += 1
-    } else if (arg.startsWith("--framework-version=")) {
-      options.frameworkVersion = readInlineFlagValue(arg, "--framework-version")
     } else if (arg === "--features") {
       options.features.push(...parseCsvValue(argv[i + 1], "--features"))
       i += 1
@@ -231,22 +223,6 @@ function validateParsedOptions(
 
   if (options.framework && !isFrameworkId(options.framework)) {
     throw new Error(`Unsupported framework: ${options.framework}`)
-  }
-
-  if (options.frameworkVersion && !/^\d+$/.test(options.frameworkVersion)) {
-    throw new Error(
-      "Invalid --framework-version: major version must be numeric"
-    )
-  }
-
-  if (
-    options.frameworkVersion &&
-    options.framework &&
-    options.framework !== "react"
-  ) {
-    throw new Error(
-      `Unsupported --framework-version for framework: ${options.framework}`
-    )
   }
 
   if (!isTestRunner(options.testRunner)) {

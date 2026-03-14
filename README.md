@@ -26,7 +26,6 @@ npx @tyyyho/treg <command> [options]
 ## Options
 
 - `--framework <node|react|next|vue|svelte|nuxt>`: Target framework
-- `--framework-version <major>`: Optional major version hint (react only)
 - `--features <lint,format,typescript,test,husky>`: Features to install (defaults to all)
 - `--dir <path>`: Target directory (defaults to current directory)
 - `--test-runner <jest|vitest>`: Test runner when test feature is enabled
@@ -68,12 +67,6 @@ Use Vitest for test feature:
 npx @tyyyho/treg init --framework node --features test --test-runner vitest
 ```
 
-Use react major version variant:
-
-```bash
-npx @tyyyho/treg init --framework react --framework-version 18
-```
-
 Preview changes only:
 
 ```bash
@@ -96,4 +89,5 @@ npx @tyyyho/treg init --framework react --dir ./packages/web
 
 - `init` requires `--framework`.
 - `add` lets you install only the features you specify.
+- Framework setup uses one stable config per framework (no `--framework-version` variants).
 - `--dry-run` prints the full plan and does not write files.

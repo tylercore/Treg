@@ -1,7 +1,7 @@
 import { nextFramework } from "./next/index.ts"
 import { nodeFramework } from "./node/index.ts"
 import { nuxtFramework } from "./nuxt/index.ts"
-import { reactFramework, resolveReactFramework } from "./react/index.ts"
+import { reactFramework } from "./react/index.ts"
 import { svelteFramework } from "./svelte/index.ts"
 import { vueFramework } from "./vue/index.ts"
 import type {
@@ -31,23 +31,13 @@ const FRAMEWORK_DETECT_ORDER: DetectableFramework[] = [
 
 export function resolveFramework(
   frameworkArg: FrameworkId | null,
-  frameworkVersion: string | null,
   packageJson: PackageJson
 ): Framework {
-  if (frameworkArg === "react") {
-    return resolveReactFramework(packageJson, frameworkVersion)
-  }
-
   if (frameworkArg) {
     return FRAMEWORK_REGISTRY[frameworkArg]
   }
 
-  const detected = detectFramework(packageJson)
-  if (detected.id === "react") {
-    return resolveReactFramework(packageJson, frameworkVersion)
-  }
-
-  return detected
+  return detectFramework(packageJson)
 }
 
 export function detectFramework(packageJson: PackageJson): DetectableFramework {

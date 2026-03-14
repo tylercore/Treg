@@ -52,18 +52,7 @@ export async function main(
     !options.pm || options.pm === "auto"
       ? detectPackageManager(projectDir)
       : options.pm
-  const framework = resolveFramework(
-    options.framework,
-    options.frameworkVersion,
-    packageJson
-  )
-  if (options.frameworkVersion && framework.id !== "react") {
-    console.error(
-      `Unsupported --framework-version for framework: ${framework.id}`
-    )
-    process.exitCode = 1
-    return
-  }
+  const framework = resolveFramework(options.framework, packageJson)
   const enabledFeatures = resolveFeatures(options)
 
   const context: RuleContext = {
@@ -76,7 +65,7 @@ export async function main(
 
   console.log(formatStep(1, TOTAL_STEPS, "Resolve plan", options.dryRun))
   console.log(
-    `${options.dryRun ? "[dry-run] " : ""}Framework=${framework.id}${framework.variant ? `/${framework.variant}` : ""}, features=${Object.entries(
+    `${options.dryRun ? "[dry-run] " : ""}Framework=${framework.id}, features=${Object.entries(
       enabledFeatures
     )
       .filter(([, enabled]) => enabled)

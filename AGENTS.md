@@ -15,14 +15,14 @@
 
 ## Framework layout (required)
 
-- 每個框架的規則與變體必須放在獨立資料夾，禁止混寫。
+- 每個框架的規則必須放在獨立資料夾，禁止混寫。
 - 建議結構：
   - `scripts/init-project/frameworks/node/*`
   - `scripts/init-project/frameworks/react/*`
   - `scripts/init-project/frameworks/next/*`
   - `scripts/init-project/frameworks/vue/*`
   - `scripts/init-project/frameworks/svelte/*`
-- 若有大版本差異，放在框架資料夾下的版本子目錄（例如 `react/v18`, `react/v19`）。
+- 每個框架僅維持單一版本設定，不再支援版本子目錄變體。
 
 ## Git & commit rules
 
@@ -56,6 +56,7 @@
 ## CLI behavior rules
 
 - `init` 必須要求 `--framework`。
+- 不支援 `--framework-version`，每個 framework 只使用單一版本規則。
 - `add` 必須允許只安裝指定 features。
 - `test` feature 必須支援 `--test-runner <jest|vitest>`。
 - `--dry-run` 必須輸出完整計畫且不寫入檔案。

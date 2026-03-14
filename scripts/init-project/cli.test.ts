@@ -23,7 +23,6 @@ describe("parseArgs", () => {
       command: "init",
       projectDir: "demo-app",
       framework: "react",
-      frameworkVersion: null,
       features: ["lint", "test"],
       testRunner: "vitest",
       pm: "npm",
@@ -82,22 +81,10 @@ describe("parseArgs", () => {
     ).toThrow("Unsupported feature in --features: ai")
   })
 
-  it("throws for non-numeric framework version", () => {
+  it("throws for removed framework version option", () => {
     expect(() =>
-      parseArgs([
-        "init",
-        "--framework",
-        "react",
-        "--framework-version",
-        "latest",
-      ])
-    ).toThrow("Invalid --framework-version: major version must be numeric")
-  })
-
-  it("throws when non-react uses framework version", () => {
-    expect(() =>
-      parseArgs(["init", "--framework", "vue", "--framework-version", "3"])
-    ).toThrow("Unsupported --framework-version for framework: vue")
+      parseArgs(["init", "--framework", "react", "--framework-version", "18"])
+    ).toThrow("Unknown argument: --framework-version")
   })
 })
 
