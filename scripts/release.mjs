@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { spawnSync } from "node:child_process"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
+
 import path from "node:path"
+import { spawnSync } from "node:child_process"
+import { tmpdir } from "node:os"
 
 const ALLOWED_TARGETS = new Set([
   "patch",
@@ -108,7 +109,12 @@ runCiValidation()
 ensureCleanWorkingTree()
 
 console.log(`[release] Bumping version with target: ${releaseTarget}`)
-run("npm", ["version", releaseTarget])
+run("npm", [
+  "version",
+  releaseTarget,
+  "-m",
+  "chore: release v%s [skip release ci]",
+])
 
 const version = run("node", ["-p", "require('./package.json').version"], {
   captureOutput: true,
