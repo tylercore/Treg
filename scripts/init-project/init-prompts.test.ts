@@ -2,78 +2,53 @@ import { describe, expect, it } from "@jest/globals"
 import { __testables__ } from "./init-prompts.ts"
 
 describe("init prompts helpers", () => {
-  it("parses single-choice by default and index", () => {
-    const pmChoices = [
-      { value: "pnpm", label: "pnpm" },
-      { value: "npm", label: "npm" },
-      { value: "yarn", label: "yarn" },
-      { value: "bun", label: "bun" },
-    ] as const
-
-    expect(__testables__.parseSingleChoice("", pmChoices, "npm")).toMatchObject(
-      { ok: true, value: "npm" }
-    )
-    expect(
-      __testables__.parseSingleChoice("4", pmChoices, "npm")
-    ).toMatchObject({ ok: true, value: "bun" })
+  it("moves highlighted index with wrap-around", () => {
+    expect(__testables__.moveCursorIndex(0, -1, 4)).toBe(3)
+    expect(__testables__.moveCursorIndex(3, 1, 4)).toBe(0)
+    expect(__testables__.moveCursorIndex(1, 1, 4)).toBe(2)
   })
 
-  it("parses test-runner skip choice", () => {
-    const testRunnerChoices = [
-      { value: "jest", label: "jest" },
-      { value: "vitest", label: "vitest" },
-      { value: "skip", label: "skip (disable test feature)" },
-    ] as const
+  it("toggles selected values", () => {
+    const initial = new Set(["lint", "test"])
+    const removed = __testables__.toggleSelectedValue(initial, "lint")
+    const added = __testables__.toggleSelectedValue(removed, "format")
 
-    expect(
-      __testables__.parseSingleChoice("skip", testRunnerChoices, "jest")
-    ).toMatchObject({ ok: true, value: "skip" })
-    expect(
-      __testables__.parseSingleChoice("3", testRunnerChoices, "jest")
-    ).toMatchObject({
-      ok: true,
-      value: "skip",
-    })
+    expect([...removed]).toEqual(["test"])
+    expect([...added]).toEqual(["test", "format"])
   })
 
-  it("parses multi-choice by value and index", () => {
+  it("selects all values from choices", () => {
     const choices = [
       { value: "claude", label: "Claude" },
-      { value: "codex", label: "codex" },
-      { value: "gemini", label: "gemini" },
+      { value: "codex", label: "Codex" },
+      { value: "gemini", label: "Gemini" },
     ] as const
 
-    expect(
-      __testables__.parseMultiChoice("1,gemini", choices, ["claude"])
-    ).toMatchObject({ ok: true, value: ["claude", "gemini"] })
+    expect([...__testables__.selectAllValues(choices)]).toEqual([
+      "claude",
+      "codex",
+      "gemini",
+    ])
   })
 
-  it("supports skip for optional multi-choice", () => {
+  it("returns selected values in display order", () => {
     const choices = [
       { value: "claude", label: "Claude" },
-      { value: "codex", label: "codex" },
+      { value: "codex", label: "Codex" },
+      { value: "gemini", label: "Gemini" },
     ] as const
 
-    expect(__testables__.parseMultiChoice("skip", choices, ["claude"])).toEqual(
-      { ok: true, value: [] }
-    )
+    const selected = new Set(["gemini", "claude"])
+    expect(__testables__.getSelectedValuesInOrder(choices, selected)).toEqual([
+      "claude",
+      "gemini",
+    ])
   })
 
-  it("maps all selection to full feature set", () => {
-    expect(__testables__.toFeatureSelection(["all"])).toEqual({
-      enabledFeatures: {
-        lint: true,
-        format: true,
-        typescript: true,
-        test: true,
-        husky: true,
-      },
-      skills: true,
-    })
-  })
-
-  it("maps specific features without ai skills", () => {
-    expect(__testables__.toFeatureSelection(["lint", "test"])).toEqual({
+  it("maps selected features and skills", () => {
+    expect(
+      __testables__.toFeatureSelection(["lint", "test", "skills"])
+    ).toEqual({
       enabledFeatures: {
         lint: true,
         format: false,
@@ -81,7 +56,7 @@ describe("init prompts helpers", () => {
         test: true,
         husky: false,
       },
-      skills: false,
+      skills: true,
     })
   })
 })

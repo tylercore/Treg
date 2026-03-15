@@ -1,5 +1,11 @@
 import { stdin as input, stdout as output } from "node:process"
-import { createInterface } from "node:readline/promises"
+import {
+  clearScreenDown,
+  cursorTo,
+  emitKeypressEvents,
+  moveCursor as moveTerminalCursor,
+} from "node:readline"
+import type { Key } from "node:readline"
 import type {
   AiTool,
   EnabledFeatures,
@@ -11,7 +17,7 @@ import type {
 
 const DEFAULT_AI_TOOLS: readonly AiTool[] = ["claude", "codex", "gemini"]
 
-type InitPromptFeature = FeatureName | "skills" | "all"
+type InitPromptFeature = FeatureName | "skills"
 
 interface Choice<T extends string> {
   value: T
@@ -38,10 +44,9 @@ interface InitPromptDefaults {
   testRunner: TestRunner
 }
 
-interface ParseResult<T> {
-  ok: boolean
-  value?: T
-  error?: string
+interface MultiSelectOptions<T extends string> {
+  defaultValues: readonly T[]
+  allowSelectAll?: boolean
 }
 
 const PACKAGE_MANAGER_CHOICES: readonly Choice<PackageManager>[] = [
@@ -71,10 +76,6 @@ const AI_TOOL_CHOICES: readonly Choice<AiTool>[] = [
 ]
 
 const FEATURE_CHOICES: readonly Choice<InitPromptFeature>[] = [
-  {
-    value: "all",
-    label: "all (lint, format, TypeScript, test, husky, AI skill guidance)",
-  },
   { value: "lint", label: "lint" },
   { value: "format", label: "format" },
   { value: "typescript", label: "TypeScript" },
@@ -83,109 +84,49 @@ const FEATURE_CHOICES: readonly Choice<InitPromptFeature>[] = [
   { value: "skills", label: "AI skill guidance" },
 ]
 
-function formatChoices<T extends string>(
+function moveCursorIndex(
+  currentIndex: number,
+  delta: number,
+  size: number
+): number {
+  if (size <= 0) {
+    return 0
+  }
+
+  return (currentIndex + delta + size) % size
+}
+
+function toggleSelectedValue<T extends string>(
+  selectedValues: ReadonlySet<T>,
+  value: T
+): Set<T> {
+  const next = new Set(selectedValues)
+  if (next.has(value)) {
+    next.delete(value)
+    return next
+  }
+  next.add(value)
+  return next
+}
+
+function selectAllValues<T extends string>(
   choices: readonly Choice<T>[]
-): string {
+): Set<T> {
+  return new Set(choices.map(choice => choice.value))
+}
+
+function getSelectedValuesInOrder<T extends string>(
+  choices: readonly Choice<T>[],
+  selectedValues: ReadonlySet<T>
+): T[] {
   return choices
-    .map((choice, index) => `  ${index + 1}. ${choice.label}`)
-    .join("\n")
-}
-
-function parseSingleChoice<T extends string>(
-  rawInput: string,
-  choices: readonly Choice<T>[],
-  defaultValue: T
-): ParseResult<T> {
-  const normalized = rawInput.trim().toLowerCase()
-  if (!normalized) {
-    return { ok: true, value: defaultValue }
-  }
-
-  const byIndex = Number.parseInt(normalized, 10)
-  if (!Number.isNaN(byIndex) && String(byIndex) === normalized) {
-    const selected = choices[byIndex - 1]
-    if (selected) {
-      return { ok: true, value: selected.value }
-    }
-  }
-
-  const byValue = choices.find(choice => choice.value === normalized)
-  if (byValue) {
-    return { ok: true, value: byValue.value }
-  }
-
-  return {
-    ok: false,
-    error: `Invalid input: ${rawInput}. Please enter a listed number or option name.`,
-  }
-}
-
-function parseMultiChoice<T extends string>(
-  rawInput: string,
-  choices: readonly Choice<T>[],
-  defaultValues: readonly T[]
-): ParseResult<T[]> {
-  const normalized = rawInput.trim().toLowerCase()
-  if (!normalized) {
-    return { ok: true, value: [...defaultValues] }
-  }
-  if (normalized === "skip" || normalized === "none") {
-    return { ok: true, value: [] }
-  }
-
-  const tokens = normalized
-    .split(",")
-    .map(item => item.trim())
-    .filter(Boolean)
-
-  if (tokens.length === 0) {
-    return { ok: false, error: "Please enter at least one option." }
-  }
-
-  const selected = new Set<T>()
-  for (const token of tokens) {
-    const byIndex = Number.parseInt(token, 10)
-    if (!Number.isNaN(byIndex) && String(byIndex) === token) {
-      const item = choices[byIndex - 1]
-      if (!item) {
-        return {
-          ok: false,
-          error: `Invalid index: ${token}. Please choose from listed options.`,
-        }
-      }
-      selected.add(item.value)
-      continue
-    }
-
-    const byValue = choices.find(choice => choice.value === token)
-    if (!byValue) {
-      return {
-        ok: false,
-        error: `Invalid option: ${token}. Please choose from listed options.`,
-      }
-    }
-    selected.add(byValue.value)
-  }
-
-  return { ok: true, value: [...selected] }
+    .filter(choice => selectedValues.has(choice.value))
+    .map(choice => choice.value)
 }
 
 function toFeatureSelection(
   selected: readonly InitPromptFeature[]
 ): InitFeatureSelection {
-  if (selected.includes("all")) {
-    return {
-      enabledFeatures: {
-        lint: true,
-        format: true,
-        typescript: true,
-        test: true,
-        husky: true,
-      },
-      skills: true,
-    }
-  }
-
   return {
     enabledFeatures: {
       lint: selected.includes("lint"),
@@ -198,18 +139,295 @@ function toFeatureSelection(
   }
 }
 
-async function askUntilValid<T>(
-  ask: (prompt: string) => Promise<string>,
-  prompt: string,
-  parser: (value: string) => ParseResult<T>
+function renderFrame(
+  lines: readonly string[],
+  previousLineCount: number
+): number {
+  if (previousLineCount > 0) {
+    moveTerminalCursor(output, 0, -previousLineCount)
+    cursorTo(output, 0)
+    clearScreenDown(output)
+  }
+
+  output.write(lines.join("\n"))
+  output.write("\n")
+  return lines.length
+}
+
+function isConfirmKey(key: Key): boolean {
+  return key.name === "return" || key.name === "enter"
+}
+
+function isSelectAllKey(key: Key): boolean {
+  return key.name === "a" && !key.ctrl && !key.meta
+}
+
+function ensureRawMode(): () => void {
+  emitKeypressEvents(input)
+  input.setRawMode(true)
+  input.resume()
+  output.write("\x1b[?25l")
+
+  return () => {
+    input.setRawMode(false)
+    output.write("\x1b[?25h")
+  }
+}
+
+function buildSingleSelectLines<T extends string>(
+  title: string,
+  choices: readonly Choice<T>[],
+  highlightedIndex: number
+): string[] {
+  return [
+    title,
+    ...choices.map((choice, index) => {
+      const cursor = index === highlightedIndex ? ">" : " "
+      return `${cursor} ${choice.label}`
+    }),
+    "Use up/down arrows to move, Enter to confirm.",
+  ]
+}
+
+function buildMultiSelectLines<T extends string>(
+  title: string,
+  choices: readonly Choice<T>[],
+  selectedValues: ReadonlySet<T>,
+  highlightedIndex: number,
+  allowSelectAll: boolean
+): string[] {
+  const controls = allowSelectAll
+    ? "Use up/down arrows to move, Space to toggle, A to select all, Enter to confirm."
+    : "Use up/down arrows to move, Space to toggle, Enter to confirm."
+
+  return [
+    title,
+    ...choices.map((choice, index) => {
+      const cursor = index === highlightedIndex ? ">" : " "
+      const mark = selectedValues.has(choice.value) ? "x" : " "
+      return `${cursor} [${mark}] ${choice.label}`
+    }),
+    controls,
+  ]
+}
+
+async function promptSingleChoice<T extends string>(
+  title: string,
+  choices: readonly Choice<T>[],
+  defaultValue: T
 ): Promise<T> {
-  while (true) {
-    const raw = await ask(prompt)
-    const parsed = parser(raw)
-    if (parsed.ok && parsed.value !== undefined) {
-      return parsed.value
-    }
-    console.log(parsed.error ?? "Invalid input")
+  const defaultIndex = choices.findIndex(
+    choice => choice.value === defaultValue
+  )
+  let highlightedIndex = defaultIndex >= 0 ? defaultIndex : 0
+  let renderedLineCount = 0
+
+  const restore = ensureRawMode()
+
+  try {
+    renderedLineCount = renderFrame(
+      buildSingleSelectLines(title, choices, highlightedIndex),
+      renderedLineCount
+    )
+
+    return await new Promise<T>((resolve, reject) => {
+      let settled = false
+
+      const onKeypress = (_: string, key: Key): void => {
+        if (key.ctrl && key.name === "c") {
+          if (settled) {
+            return
+          }
+          settled = true
+          cleanup()
+          reject(new Error("Prompt cancelled by user"))
+          return
+        }
+
+        if (key.name === "up") {
+          highlightedIndex = moveCursorIndex(
+            highlightedIndex,
+            -1,
+            choices.length
+          )
+          renderedLineCount = renderFrame(
+            buildSingleSelectLines(title, choices, highlightedIndex),
+            renderedLineCount
+          )
+          return
+        }
+
+        if (key.name === "down") {
+          highlightedIndex = moveCursorIndex(
+            highlightedIndex,
+            1,
+            choices.length
+          )
+          renderedLineCount = renderFrame(
+            buildSingleSelectLines(title, choices, highlightedIndex),
+            renderedLineCount
+          )
+          return
+        }
+
+        if (isConfirmKey(key)) {
+          const selected = choices[highlightedIndex]
+          if (selected) {
+            if (settled) {
+              return
+            }
+            settled = true
+            cleanup()
+            resolve(selected.value)
+          }
+        }
+      }
+
+      const cleanup = (): void => {
+        input.off("keypress", onKeypress)
+      }
+
+      input.on("keypress", onKeypress)
+    })
+  } finally {
+    restore()
+    output.write("\n")
+  }
+}
+
+async function promptMultiChoice<T extends string>(
+  title: string,
+  choices: readonly Choice<T>[],
+  options: MultiSelectOptions<T>
+): Promise<T[]> {
+  let highlightedIndex = 0
+  let selectedValues = new Set(options.defaultValues)
+  let renderedLineCount = 0
+  const allowSelectAll = options.allowSelectAll ?? false
+
+  const restore = ensureRawMode()
+
+  try {
+    renderedLineCount = renderFrame(
+      buildMultiSelectLines(
+        title,
+        choices,
+        selectedValues,
+        highlightedIndex,
+        allowSelectAll
+      ),
+      renderedLineCount
+    )
+
+    return await new Promise<T[]>((resolve, reject) => {
+      let settled = false
+
+      const onKeypress = (_: string, key: Key): void => {
+        if (key.ctrl && key.name === "c") {
+          if (settled) {
+            return
+          }
+          settled = true
+          cleanup()
+          reject(new Error("Prompt cancelled by user"))
+          return
+        }
+
+        if (key.name === "up") {
+          highlightedIndex = moveCursorIndex(
+            highlightedIndex,
+            -1,
+            choices.length
+          )
+          renderedLineCount = renderFrame(
+            buildMultiSelectLines(
+              title,
+              choices,
+              selectedValues,
+              highlightedIndex,
+              allowSelectAll
+            ),
+            renderedLineCount
+          )
+          return
+        }
+
+        if (key.name === "down") {
+          highlightedIndex = moveCursorIndex(
+            highlightedIndex,
+            1,
+            choices.length
+          )
+          renderedLineCount = renderFrame(
+            buildMultiSelectLines(
+              title,
+              choices,
+              selectedValues,
+              highlightedIndex,
+              allowSelectAll
+            ),
+            renderedLineCount
+          )
+          return
+        }
+
+        if (key.name === "space") {
+          const highlighted = choices[highlightedIndex]
+          if (!highlighted) {
+            return
+          }
+
+          selectedValues = toggleSelectedValue(
+            selectedValues,
+            highlighted.value
+          )
+          renderedLineCount = renderFrame(
+            buildMultiSelectLines(
+              title,
+              choices,
+              selectedValues,
+              highlightedIndex,
+              allowSelectAll
+            ),
+            renderedLineCount
+          )
+          return
+        }
+
+        if (allowSelectAll && isSelectAllKey(key)) {
+          selectedValues = selectAllValues(choices)
+          renderedLineCount = renderFrame(
+            buildMultiSelectLines(
+              title,
+              choices,
+              selectedValues,
+              highlightedIndex,
+              allowSelectAll
+            ),
+            renderedLineCount
+          )
+          return
+        }
+
+        if (isConfirmKey(key)) {
+          if (settled) {
+            return
+          }
+          settled = true
+          cleanup()
+          resolve(getSelectedValuesInOrder(choices, selectedValues))
+        }
+      }
+
+      const cleanup = (): void => {
+        input.off("keypress", onKeypress)
+      }
+
+      input.on("keypress", onKeypress)
+    })
+  } finally {
+    restore()
+    output.write("\n")
   }
 }
 
@@ -234,98 +452,89 @@ export async function collectInitPrompts(
     }
   }
 
-  const rl = createInterface({ input, output })
+  console.log("\nInit setup")
 
-  try {
-    console.log("\nInit setup")
+  console.log("\n1) Package manager")
+  const pm = await promptSingleChoice(
+    "Select package manager:",
+    PACKAGE_MANAGER_CHOICES,
+    defaults.pm
+  )
 
-    console.log("\n1) Package manager")
-    console.log(formatChoices(PACKAGE_MANAGER_CHOICES))
-    const pm = await askUntilValid(
-      rl.question.bind(rl),
-      `Select package manager [default: ${defaults.pm}]: `,
-      answer => parseSingleChoice(answer, PACKAGE_MANAGER_CHOICES, defaults.pm)
+  console.log("\n2) Features")
+  const featureAnswers = await promptMultiChoice(
+    "Select features:",
+    FEATURE_CHOICES,
+    {
+      defaultValues: FEATURE_CHOICES.map(choice => choice.value),
+      allowSelectAll: true,
+    }
+  )
+  const featureSelection = toFeatureSelection(featureAnswers)
+
+  let testRunner = defaults.testRunner
+  const enabledFeatures = { ...featureSelection.enabledFeatures }
+
+  if (featureSelection.enabledFeatures.test) {
+    console.log("\n3) Test runner")
+    const selectedTestRunner = await promptSingleChoice(
+      "Select test runner:",
+      TEST_RUNNER_CHOICES,
+      defaults.testRunner
     )
 
-    console.log("\n2) Features")
-    console.log(formatChoices(FEATURE_CHOICES))
-    const featureAnswers = await askUntilValid(
-      rl.question.bind(rl),
-      "Select features (comma-separated, default: all): ",
-      answer => parseMultiChoice(answer, FEATURE_CHOICES, ["all"])
+    if (selectedTestRunner === "skip") {
+      enabledFeatures.test = false
+      console.log("Test feature disabled by selection: skip")
+    } else {
+      testRunner = selectedTestRunner
+    }
+  } else {
+    console.log("\n3) Test runner skipped (test feature not selected)")
+  }
+
+  let formatter = defaults.formatter
+  if (featureSelection.enabledFeatures.format) {
+    console.log("\n4) Formatter")
+    formatter = await promptSingleChoice(
+      "Select formatter:",
+      FORMATTER_CHOICES,
+      defaults.formatter
     )
-    const featureSelection = toFeatureSelection(featureAnswers)
+  } else {
+    console.log("\n4) Formatter skipped (format feature not selected)")
+  }
 
-    let testRunner = defaults.testRunner
-    const enabledFeatures = { ...featureSelection.enabledFeatures }
-    if (featureSelection.enabledFeatures.test) {
-      console.log("\n3) Test runner")
-      console.log(formatChoices(TEST_RUNNER_CHOICES))
-      const selectedTestRunner = await askUntilValid(
-        rl.question.bind(rl),
-        `Select test runner [default: ${defaults.testRunner}, or skip]: `,
-        answer =>
-          parseSingleChoice(answer, TEST_RUNNER_CHOICES, defaults.testRunner)
-      )
+  let aiTools: AiTool[] = []
+  let skills = featureSelection.skills
 
-      if (selectedTestRunner === "skip") {
-        enabledFeatures.test = false
-        console.log("Test feature disabled by selection: skip")
-      } else {
-        testRunner = selectedTestRunner
-      }
-    } else {
-      console.log("\n3) Test runner skipped (test feature not selected)")
+  if (skills) {
+    console.log("\n5) AI tools")
+    aiTools = await promptMultiChoice("Select AI tools:", AI_TOOL_CHOICES, {
+      defaultValues: DEFAULT_AI_TOOLS,
+      allowSelectAll: true,
+    })
+    if (aiTools.length === 0) {
+      skills = false
     }
+  } else {
+    console.log("\n5) AI tools skipped (AI skill guidance not selected)")
+  }
 
-    let formatter = defaults.formatter
-    if (featureSelection.enabledFeatures.format) {
-      console.log("\n4) Formatter")
-      console.log(formatChoices(FORMATTER_CHOICES))
-      formatter = await askUntilValid(
-        rl.question.bind(rl),
-        `Select formatter [default: ${defaults.formatter}]: `,
-        answer =>
-          parseSingleChoice(answer, FORMATTER_CHOICES, defaults.formatter)
-      )
-    } else {
-      console.log("\n4) Formatter skipped (format feature not selected)")
-    }
-
-    let aiTools: AiTool[] = []
-    let skills = featureSelection.skills
-
-    if (skills) {
-      console.log("\n5) AI tools")
-      console.log(formatChoices(AI_TOOL_CHOICES))
-      console.log("Type 'skip' to disable AI skill guidance.")
-      aiTools = await askUntilValid(
-        rl.question.bind(rl),
-        "Select AI tools (comma-separated, default: all): ",
-        answer => parseMultiChoice(answer, AI_TOOL_CHOICES, DEFAULT_AI_TOOLS)
-      )
-      if (aiTools.length === 0) {
-        skills = false
-      }
-    } else {
-      console.log("\n5) AI tools skipped (AI skill guidance not selected)")
-    }
-
-    return {
-      pm,
-      formatter,
-      testRunner,
-      enabledFeatures,
-      skills,
-      aiTools,
-    }
-  } finally {
-    rl.close()
+  return {
+    pm,
+    formatter,
+    testRunner,
+    enabledFeatures,
+    skills,
+    aiTools,
   }
 }
 
 export const __testables__ = {
-  parseSingleChoice,
-  parseMultiChoice,
+  moveCursorIndex,
+  toggleSelectedValue,
+  selectAllValues,
+  getSelectedValuesInOrder,
   toFeatureSelection,
 }

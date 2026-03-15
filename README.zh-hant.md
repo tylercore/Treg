@@ -29,12 +29,12 @@ npx @tyyyho/treg init
 執行 `init` 後，`treg` 會依序詢問：
 
 1. 套件管理器（`pnpm|npm|yarn|bun`）
-2. 要加入的功能（預設勾選 `all`）
+2. 要加入的功能（可複選，預設全勾）
 3. 測試工具（僅在選到 `test` 時詢問，支援 `skip`）
 4. Formatter（僅在選到 `format` 時詢問）
 5. AI 工具（`Claude|Codex|Gemini` 可複選，僅在選到 AI skill guidance 時詢問）
 
-預設 `all` 內容：
+預設勾選功能：
 
 - lint
 - format

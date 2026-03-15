@@ -34,15 +34,15 @@ describe("ai-skills helpers", () => {
     expect(content).not.toContain("<!-- treg:skills:")
   })
 
-  it("upserts an existing skill section with legacy markers", () => {
+  it("appends skill section when no existing section is present", () => {
     const replaced = __testables__.upsertSkillSection(
-      "# Header\n\n<!-- treg:skills:start -->\nold\n<!-- treg:skills:end -->\n",
+      "# Header\n\nSome existing content.",
       "## treg AI Skills\n\nnew"
     )
 
+    expect(replaced).toContain("# Header")
     expect(replaced).toContain("new")
-    expect(replaced).not.toContain("old")
-    expect(replaced).not.toContain("<!-- treg:skills:")
+    expect(replaced).toContain("Some existing content.")
   })
 
   it("upserts an existing skill section without markers", () => {
@@ -216,9 +216,9 @@ describe("ai-skills helpers", () => {
       const agentsDoc = await readFile(path.join(dir, "AGENTS.md"), "utf8")
       const geminiDoc = await readFile(path.join(dir, "GEMINI.md"), "utf8")
 
-      expect(agentsDoc).toContain("# AGENTS")
+      expect(agentsDoc).not.toContain("# AGENTS")
       expect(agentsDoc).toContain("## treg AI Skills")
-      expect(geminiDoc).toContain("# GEMINI")
+      expect(geminiDoc).not.toContain("# GEMINI")
       expect(geminiDoc).toContain("## treg AI Skills")
       expect(existsSync(path.join(dir, "CLAUDE.md"))).toBe(false)
     } finally {
