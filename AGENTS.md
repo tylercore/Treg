@@ -6,6 +6,7 @@
 - 僅處理工具鏈與專案規範（lint、format、typescript、test、husky、ai-skills）。
 - 禁止加入產品功能、頁面、API、商業邏輯。
 - 完成功能後Claude會進行code review
+- 開發跟部署相關的內容寫進AGENTS.md，使用相關的說明寫進README.md
 - README跟README.zh-hant要同步修改
 
 ## Architecture rules
@@ -52,6 +53,7 @@
   - `.github/workflows/_verify.yml`
 - `ci.yml` 僅監聽 `main` branch 的 push。
 - `publish.yml` 僅監聽版本 tag（`v*`）的 push。
+- 發布流程：先在 `main` 產生 release commit（至少包含 `package.json.version` 與 `CHANGELOG` 更新），再將 `main` merge 到 `release` 並建立 `v*` tag 觸發 publish。
 - 安裝與共用驗證步驟（format/lint/type:check/test/build/smoke test）統一放在 reusable workflow `_verify.yml`。
 
 ## CLI behavior rules

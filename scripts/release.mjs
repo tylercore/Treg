@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 
@@ -16,10 +22,15 @@ const ALLOWED_TARGETS = new Set([
 ])
 const EXACT_SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-.]+)?(?:\+[0-9A-Za-z-.]+)?$/
 
-function run(command, args, { captureOutput = false } = {}) {
+function run(
+  command,
+  args,
+  { captureOutput = false, cwd = process.cwd() } = {}
+) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     stdio: captureOutput ? ["ignore", "pipe", "pipe"] : "inherit",
+    cwd,
   })
 
   if (result.status !== 0) {
@@ -30,6 +41,14 @@ function run(command, args, { captureOutput = false } = {}) {
   }
 
   return captureOutput ? result.stdout.trim() : ""
+}
+
+function commandStatus(command, args, cwd = process.cwd()) {
+  return spawnSync(command, args, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    cwd,
+  }).status
 }
 
 function fail(message) {
@@ -90,6 +109,129 @@ function runCiValidation() {
   }
 }
 
+function bumpVersion(releaseTarget) {
+  console.log(`[release] Bumping version with target: ${releaseTarget}`)
+  run("npm", ["version", releaseTarget, "--no-git-tag-version"])
+  return JSON.parse(readFileSync("package.json", "utf8")).version
+}
+
+function updateChangelog(version) {
+  const changelogPath = "CHANGELOG.md"
+  const heading = "# Changelog"
+  const date = new Date().toISOString().slice(0, 10)
+  const releaseTitle = `## v${version} - ${date}`
+  const releaseBody = `- Release v${version}.`
+  const section = `${releaseTitle}\n\n${releaseBody}\n`
+
+  const current = existsSync(changelogPath)
+    ? readFileSync(changelogPath, "utf8")
+    : `${heading}\n\n`
+
+  if (current.includes(`## v${version}`)) {
+    fail(`CHANGELOG already contains release section for v${version}`)
+  }
+
+  const normalized = current.trim()
+  const remainder = normalized.startsWith(heading)
+    ? normalized.slice(heading.length).trim()
+    : normalized
+
+  const next = `${heading}\n\n${section}${remainder ? `\n${remainder}\n` : ""}`
+  writeFileSync(changelogPath, next, "utf8")
+  console.log(`[release] Updated ${changelogPath} with v${version}`)
+}
+
+function commitReleaseArtifacts(version) {
+  run("git", ["add", "package.json", "CHANGELOG.md"])
+  const staged = run("git", ["diff", "--cached", "--name-only"], {
+    captureOutput: true,
+  })
+  if (!staged) {
+    fail("No release artifacts staged for commit.")
+  }
+  run("git", ["commit", "-m", `chore(release): v${version}`])
+}
+
+function pushMain() {
+  console.log("[release] Pushing release commit to origin/main")
+  run("git", ["push", "origin", "main"])
+}
+
+function ensureTagNotExists(tagName) {
+  if (
+    commandStatus("git", [
+      "rev-parse",
+      "-q",
+      "--verify",
+      `refs/tags/${tagName}`,
+    ]) === 0
+  ) {
+    fail(`Tag already exists locally: ${tagName}`)
+  }
+
+  const remoteTagStatus = commandStatus("git", [
+    "ls-remote",
+    "--exit-code",
+    "--tags",
+    "origin",
+    `refs/tags/${tagName}`,
+  ])
+  if (remoteTagStatus === 0) {
+    fail(`Tag already exists on origin: ${tagName}`)
+  }
+}
+
+function checkoutReleaseBranch() {
+  run("git", ["fetch", "origin"])
+  const hasRemoteRelease =
+    commandStatus("git", [
+      "ls-remote",
+      "--exit-code",
+      "--heads",
+      "origin",
+      "release",
+    ]) === 0
+  const hasLocalRelease =
+    commandStatus("git", [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      "refs/heads/release",
+    ]) === 0
+
+  if (hasRemoteRelease) {
+    if (hasLocalRelease) {
+      run("git", ["checkout", "release"])
+      run("git", ["pull", "--ff-only", "origin", "release"])
+      return
+    }
+    run("git", ["checkout", "-b", "release", "origin/release"])
+    return
+  }
+
+  if (hasLocalRelease) {
+    run("git", ["checkout", "release"])
+    return
+  }
+
+  run("git", ["checkout", "-b", "release"])
+}
+
+function mergeMainToReleaseAndTag(version) {
+  const tagName = `v${version}`
+  ensureTagNotExists(tagName)
+
+  checkoutReleaseBranch()
+  run("git", ["merge", "--no-ff", "--no-edit", "main"])
+
+  console.log(`[release] Creating release tag ${tagName} on release branch`)
+  run("git", ["tag", tagName])
+
+  console.log("[release] Pushing release branch and tag")
+  run("git", ["push", "origin", "release"])
+  run("git", ["push", "origin", tagName])
+}
+
 const input = process.argv[2]
 if (input === "--help" || input === "-h") {
   printUsage()
@@ -107,14 +249,14 @@ ensureCleanWorkingTree()
 runCiValidation()
 ensureCleanWorkingTree()
 
-console.log(`[release] Bumping version with target: ${releaseTarget}`)
-run("npm", ["version", releaseTarget])
+const version = bumpVersion(releaseTarget)
+updateChangelog(version)
+commitReleaseArtifacts(version)
+ensureCleanWorkingTree()
+pushMain()
+mergeMainToReleaseAndTag(version)
+run("git", ["checkout", "main"])
 
-const version = run("node", ["-p", "require('./package.json').version"], {
-  captureOutput: true,
-})
-
-console.log("[release] Pushing version commit and tag to origin/main")
-run("git", ["push", "origin", "main", "--follow-tags"])
-
-console.log(`[release] Done: pushed commit and tag v${version}`)
+console.log(
+  `[release] Done: release commit created on main, merged to release, and tagged v${version}.`
+)
