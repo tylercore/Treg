@@ -10,8 +10,6 @@ import { existsSync } from "node:fs"
 import { promises as fs } from "node:fs"
 import path from "node:path"
 
-const START_MARKER = "<!-- treg:skills:start -->"
-const END_MARKER = "<!-- treg:skills:end -->"
 const SKILL_SECTION_HEADING = "## treg AI Skills"
 const SKILLS_BASE_DIR = "skills"
 const AI_TOOL_DOCS: Record<AiTool, string> = {
@@ -202,14 +200,6 @@ function upsertSkillSection(content: string, nextSection: string): string {
     return after ? `${rebuilt}\n${after}\n` : `${rebuilt}`
   }
 
-  const start = content.indexOf(START_MARKER)
-  const end = content.indexOf(END_MARKER)
-
-  if (start !== -1 && end !== -1 && end > start) {
-    const suffixStart = end + END_MARKER.length
-    return replaceSection(start, suffixStart)
-  }
-
   const headingStart = content.indexOf(SKILL_SECTION_HEADING)
   if (headingStart !== -1) {
     const nextHeading = content.indexOf("\n## ", headingStart + 1)
@@ -222,11 +212,6 @@ function upsertSkillSection(content: string, nextSection: string): string {
   }
 
   return `${content.trimEnd()}\n\n${nextSection.trim()}\n`
-}
-
-function buildInitialAiDocContent(fileName: string): string {
-  const baseName = path.basename(fileName, path.extname(fileName))
-  return `# ${baseName}\n`
 }
 
 export async function runAiSkillsRule(context: RuleContext): Promise<void> {
@@ -247,9 +232,7 @@ export async function runAiSkillsRule(context: RuleContext): Promise<void> {
     }
 
     const exists = existsSync(targetFile)
-    const current = exists
-      ? await fs.readFile(targetFile, "utf8")
-      : buildInitialAiDocContent(targetFile)
+    const current = exists ? await fs.readFile(targetFile, "utf8") : ""
     const updated = upsertSkillSection(current, section)
 
     if (updated !== current) {
