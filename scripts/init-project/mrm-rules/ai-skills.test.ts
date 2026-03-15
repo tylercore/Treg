@@ -19,18 +19,18 @@ describe("ai-skills helpers", () => {
     })
 
     expect(content).toContain("## treg AI Skills")
-    expect(content).toContain("### 執行步驟與 Skill 對應")
+    expect(content).toContain("### Steps and Skill Mapping")
     expect(content).toContain(
-      "1. 格式處理：呼叫 [treg/format](skills/format/SKILL.md)"
+      "1. Formatting: use [treg/format](skills/format/SKILL.md)"
     )
     expect(content).toContain(
-      "2. Lint 規則檢查：呼叫 [treg/lint](skills/lint/SKILL.md)"
+      "2. Lint Validation: use [treg/lint](skills/lint/SKILL.md)"
     )
     expect(content).toContain(
-      "3. 測試規則調整：呼叫 [treg/test](skills/test/SKILL.md)"
+      "3. Test Configuration: use [treg/test](skills/test/SKILL.md)"
     )
-    expect(content).toContain("目前測試工具：`vitest`")
-    expect(content).not.toContain("TypeScript 型別與設定")
+    expect(content).toContain("Current test runner: `vitest`")
+    expect(content).not.toContain("TypeScript Settings")
     expect(content).not.toContain("<!-- treg:skills:")
   })
 
@@ -76,8 +76,11 @@ describe("ai-skills helpers", () => {
       {
         name: "treg/test",
         description: "Validate test runner setup and execution.",
-        when: "新增測試規則或調整測試設定時。",
-        checklist: ["確認 test runner 與專案一致", "執行 test"],
+        when: "When test rules are added or test configuration changes.",
+        checklist: [
+          "Confirm the selected test runner matches the project setup.",
+          "Run `test`.",
+        ],
       },
       "vitest"
     )

@@ -25,53 +25,61 @@ const FEATURE_SKILLS: Record<FeatureName, SkillDefinition> = {
   format: {
     name: "treg/format",
     description: "Run and verify formatting rules.",
-    when: "在提交前或大範圍改動後，統一格式化程式碼。",
-    checklist: ["執行 format", "執行 format:check", "確認未變動非目標檔案"],
+    when: "Before committing or after broad edits, normalize formatting across the codebase.",
+    checklist: [
+      "Run `format`.",
+      "Run `format:check`.",
+      "Confirm only intended files were changed.",
+    ],
   },
   husky: {
     name: "treg/husky",
     description: "Verify and maintain git hook automation.",
-    when: "需要保證 pre-commit / pre-push 自動檢查時。",
+    when: "When pre-commit and pre-push checks must stay enforced and consistent.",
     checklist: [
-      "確認 hooks 可執行",
-      "確認含 format:check 與 lint:check",
-      "若啟用型別/測試，也要納入 hooks",
+      "Ensure hooks are executable.",
+      "Ensure hooks include `format:check` and `lint:check`.",
+      "If type-checking or tests are enabled, ensure those checks are included.",
     ],
   },
   lint: {
     name: "treg/lint",
     description: "Run and validate lint rules.",
-    when: "新增規則或調整工具鏈後，驗證 lint 一致性。",
-    checklist: ["執行 lint", "執行 lint:check", "修正 max-warnings 問題"],
+    when: "After adding rules or changing tooling, verify lint consistency.",
+    checklist: [
+      "Run `lint`.",
+      "Run `lint:check`.",
+      "Fix max-warnings and remaining lint violations.",
+    ],
   },
   test: {
     name: "treg/test",
     description: "Validate test runner setup and execution.",
-    when: "新增測試規則或調整測試設定時。",
+    when: "When test rules are added or test configuration changes.",
     checklist: [
-      "確認 test runner 與專案一致",
-      "執行 test",
-      "視需要執行 test:coverage",
+      "Confirm the selected test runner matches the project setup.",
+      "Run `test`.",
+      "Run `test:coverage` when coverage validation is needed.",
     ],
   },
   typescript: {
     name: "treg/typescript",
     description: "Validate TypeScript strictness and config.",
-    when: "調整 tsconfig 或型別嚴格度規則時。",
+    when: "When tsconfig or strict typing rules are changed.",
     checklist: [
-      "執行 type:check",
-      "確認 strict 相關選項仍生效",
-      "檢查 exclude 不含產品邏輯路徑",
+      "Run `type:check`.",
+      "Confirm strict compiler options remain enabled.",
+      "Ensure `exclude` does not hide product-logic paths.",
     ],
   },
 }
 
 const FEATURE_STEP_LABELS = {
-  format: "格式處理",
-  husky: "Git hook 維護",
-  lint: "Lint 規則檢查",
-  test: "測試規則調整",
-  typescript: "TypeScript 型別與設定",
+  format: "Formatting",
+  husky: "Git Hook Maintenance",
+  lint: "Lint Validation",
+  test: "Test Configuration",
+  typescript: "TypeScript Settings",
 }
 
 function resolveSkillsDoc(projectDir: string): string | null {
@@ -162,10 +170,12 @@ function buildSkillSection(
   const { enabledFeatures, testRunner } = context
   const enabled = getEnabledFeatures(enabledFeatures)
 
-  const lines = [SKILL_SECTION_HEADING, "", "### 執行步驟與 Skill 對應", ""]
+  const lines = [SKILL_SECTION_HEADING, "", "### Steps and Skill Mapping", ""]
 
   if (enabled.length === 0) {
-    lines.push("1. 本次未啟用任何 feature，無需呼叫 skill。")
+    lines.push(
+      "1. No features are enabled in this run, so no skill call is required."
+    )
     lines.push("")
     return lines.join("\n")
   }
@@ -177,10 +187,10 @@ function buildSkillSection(
     const stepLabel = FEATURE_STEP_LABELS[feature] ?? feature
 
     lines.push(
-      `${index + 1}. ${stepLabel}：呼叫 [${skill.name}](${skillRelativePath})`
+      `${index + 1}. ${stepLabel}: use [${skill.name}](${skillRelativePath})`
     )
     if (feature === "test") {
-      lines.push(`   - 目前測試工具：\`${testRunner}\``)
+      lines.push(`   - Current test runner: \`${testRunner}\``)
     }
   })
   lines.push("")
