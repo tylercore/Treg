@@ -8,9 +8,11 @@ It applies infra setup such as lint, format, TypeScript, test, husky, and AI ski
 ## Quick Start
 
 ```bash
-pnpm dlx @tyyyho/treg init
-# or
 npx @tyyyho/treg init
+```
+
+```bash
+pnpm dlx @tyyyho/treg init
 ```
 
 `init` auto-detects framework from dependencies.

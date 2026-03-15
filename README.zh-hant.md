@@ -8,9 +8,11 @@
 ## 快速開始
 
 ```bash
-pnpm dlx @tyyyho/treg init
-# 或
 npx @tyyyho/treg init
+```
+
+```bash
+pnpm dlx @tyyyho/treg init
 ```
 
 `init` 會依照依賴自動偵測 framework。
