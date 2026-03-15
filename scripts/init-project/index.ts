@@ -9,6 +9,7 @@ import {
   USAGE,
 } from "./cli.ts"
 import { resolveFramework } from "./frameworks/index.ts"
+import { collectInitPrompts } from "./init-prompts.ts"
 import { runFeatureRules } from "./mrm-rules/index.ts"
 import { detectPackageManager, runScript } from "./package-manager.ts"
 import { formatStep } from "./utils.ts"
@@ -49,31 +50,50 @@ export async function main(
   const packageJson = JSON.parse(
     await fs.readFile(packageJsonPath, "utf8")
   ) as PackageJson
-  const pm =
-    !options.pm || options.pm === "auto"
-      ? detectPackageManager(projectDir)
-      : options.pm
   const framework = resolveFramework(options.framework, packageJson)
-  const testRunner = resolveTestRunner(framework.id, options.testRunner)
-  const enabledFeatures = resolveFeatures(options)
+  let pm = detectPackageManager(projectDir)
+  let formatter = options.formatter
+  let testRunner = resolveTestRunner(framework.id, options.testRunner)
+  let enabledFeatures = resolveFeatures(options)
+  let skills = options.skills
+  let aiTools = [...options.aiTools]
+
+  if (options.command === "init") {
+    const prompted = await collectInitPrompts({
+      pm,
+      formatter,
+      testRunner: resolveTestRunner(framework.id, null),
+    })
+    pm = prompted.pm
+    formatter = prompted.formatter
+    testRunner = prompted.testRunner
+    enabledFeatures = prompted.enabledFeatures
+    skills = prompted.skills
+    aiTools = prompted.aiTools
+  }
 
   const context: RuleContext = {
     ...options,
+    formatter,
     testRunner,
     projectDir,
     pm,
     framework,
     enabledFeatures,
+    skills,
+    aiTools,
   }
 
   console.log(formatStep(1, TOTAL_STEPS, "Resolve plan", options.dryRun))
   console.log(
-    `${options.dryRun ? "[dry-run] " : ""}Framework=${framework.id}, features=${Object.entries(
+    `${options.dryRun ? "[dry-run] " : ""}Framework=${framework.id}, pm=${pm}, features=${Object.entries(
       enabledFeatures
     )
       .filter(([, enabled]) => enabled)
       .map(([name]) => name)
-      .join(", ")}, formatter=${options.formatter}, testRunner=${testRunner}`
+      .join(
+        ", "
+      )}, formatter=${formatter}, testRunner=${testRunner}, aiTools=${skills ? aiTools.join(", ") : "disabled"}`
   )
 
   console.log(formatStep(2, TOTAL_STEPS, "Run mrm rules", options.dryRun))

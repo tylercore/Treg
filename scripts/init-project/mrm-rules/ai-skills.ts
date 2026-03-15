@@ -1,4 +1,5 @@
 import type {
+  AiTool,
   EnabledFeatures,
   FeatureName,
   RuleContext,
@@ -13,7 +14,11 @@ const START_MARKER = "<!-- treg:skills:start -->"
 const END_MARKER = "<!-- treg:skills:end -->"
 const SKILL_SECTION_HEADING = "## treg AI Skills"
 const SKILLS_BASE_DIR = "skills"
-const SKILLS_DOC_CANDIDATES = ["CLAUDE.md", "AGENTS.md", "GEMINI.md"] as const
+const AI_TOOL_DOCS: Record<AiTool, string> = {
+  claude: "CLAUDE.md",
+  codex: "AGENTS.md",
+  gemini: "GEMINI.md",
+}
 
 interface SkillDefinition {
   name: string
@@ -83,10 +88,11 @@ const FEATURE_STEP_LABELS = {
   typescript: "TypeScript Settings",
 }
 
-function resolveSkillsDocs(projectDir: string): string[] {
-  return SKILLS_DOC_CANDIDATES.map(fileName =>
-    path.join(projectDir, fileName)
-  ).filter(existsSync)
+function resolveSkillsDocs(projectDir: string, aiTools: AiTool[]): string[] {
+  const docFiles = [...new Set(aiTools.map(tool => AI_TOOL_DOCS[tool]))]
+  return docFiles
+    .map(fileName => path.join(projectDir, fileName))
+    .filter(existsSync)
 }
 
 function getEnabledFeatures(enabledFeatures: EnabledFeatures): FeatureName[] {
@@ -221,11 +227,11 @@ function upsertSkillSection(content: string, nextSection: string): string {
 }
 
 export async function runAiSkillsRule(context: RuleContext): Promise<void> {
-  const { projectDir, dryRun } = context
-  const targetFiles = resolveSkillsDocs(projectDir)
+  const { projectDir, dryRun, aiTools } = context
+  const targetFiles = resolveSkillsDocs(projectDir, aiTools)
 
   if (targetFiles.length === 0) {
-    console.log("Skip ai-skills (CLAUDE.md/AGENTS.md/GEMINI.md not found)")
+    console.log("Skip ai-skills (selected AI docs not found)")
     return
   }
 

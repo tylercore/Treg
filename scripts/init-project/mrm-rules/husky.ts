@@ -80,6 +80,10 @@ function runHuskyInstallCommand(pm: PackageManager, projectDir: string): void {
     runCommand("pnpm exec husky", projectDir, false)
     return
   }
+  if (pm === "bun") {
+    runCommand("bunx husky", projectDir, false)
+    return
+  }
   if (pm === "yarn") {
     runCommand("yarn husky", projectDir, false)
     return

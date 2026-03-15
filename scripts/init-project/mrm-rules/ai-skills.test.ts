@@ -63,7 +63,9 @@ describe("ai-skills helpers", () => {
       writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
       writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n", "utf8")
 
-      expect(__testables__.resolveSkillsDocs(dir)).toEqual([
+      expect(
+        __testables__.resolveSkillsDocs(dir, ["claude", "codex", "gemini"])
+      ).toEqual([
         path.join(dir, "CLAUDE.md"),
         path.join(dir, "AGENTS.md"),
         path.join(dir, "GEMINI.md"),
@@ -94,10 +96,9 @@ describe("ai-skills helpers", () => {
         pm: "pnpm",
         force: false,
         dryRun: false,
-        noFormat: false,
-        noTestRunner: false,
         skipHuskyInstall: false,
         skills: true,
+        aiTools: ["claude", "codex", "gemini"],
         help: false,
         enabledFeatures: {
           lint: true,
@@ -120,6 +121,52 @@ describe("ai-skills helpers", () => {
       expect(existsSync(lintSkillPath)).toBe(true)
       expect(existsSync(path.join(dir, "skills/format/SKILL.md"))).toBe(false)
       expect(existsSync(path.join(dir, "skills/test/SKILL.md"))).toBe(false)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("injects guidance only for selected ai tools", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "treg-skill-selective-"))
+    try {
+      writeFileSync(path.join(dir, "CLAUDE.md"), "# Claude\n", "utf8")
+      writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
+      writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n", "utf8")
+
+      await runAiSkillsRule({
+        command: "add",
+        projectDir: dir,
+        framework: {
+          id: "node",
+          testEnvironment: "node",
+          tsRequiredExcludes: [],
+        },
+        formatter: "prettier",
+        features: [],
+        testRunner: "jest",
+        pm: "pnpm",
+        force: false,
+        dryRun: false,
+        skipHuskyInstall: false,
+        skills: true,
+        aiTools: ["codex"],
+        help: false,
+        enabledFeatures: {
+          lint: true,
+          format: false,
+          typescript: false,
+          test: false,
+          husky: false,
+        },
+      })
+
+      const claudeDoc = await readFile(path.join(dir, "CLAUDE.md"), "utf8")
+      const agentsDoc = await readFile(path.join(dir, "AGENTS.md"), "utf8")
+      const geminiDoc = await readFile(path.join(dir, "GEMINI.md"), "utf8")
+
+      expect(claudeDoc).not.toContain("## treg AI Skills")
+      expect(agentsDoc).toContain("## treg AI Skills")
+      expect(geminiDoc).not.toContain("## treg AI Skills")
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

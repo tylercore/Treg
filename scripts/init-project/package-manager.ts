@@ -7,6 +7,12 @@ export function detectPackageManager(projectDir: string): PackageManager {
   if (existsSync(path.join(projectDir, "pnpm-lock.yaml"))) {
     return "pnpm"
   }
+  if (
+    existsSync(path.join(projectDir, "bun.lockb")) ||
+    existsSync(path.join(projectDir, "bun.lock"))
+  ) {
+    return "bun"
+  }
   if (existsSync(path.join(projectDir, "yarn.lock"))) {
     return "yarn"
   }
@@ -18,6 +24,7 @@ export function detectPackageManager(projectDir: string): PackageManager {
 
 export function getRunCommand(pm: PackageManager): string {
   if (pm === "pnpm") return "pnpm"
+  if (pm === "bun") return "bun run"
   if (pm === "yarn") return "yarn"
   return "npm run"
 }
@@ -38,6 +45,10 @@ export function runScript(
 ): void {
   if (pm === "pnpm") {
     runCommand(`pnpm ${scriptName}`, cwd, dryRun)
+    return
+  }
+  if (pm === "bun") {
+    runCommand(`bun run ${scriptName}`, cwd, dryRun)
     return
   }
   if (pm === "yarn") {
@@ -61,6 +72,8 @@ export function installPackages(
 
   if (pm === "pnpm") {
     command = `pnpm add ${isDev ? "-D " : ""}${list}`
+  } else if (pm === "bun") {
+    command = `bun add ${isDev ? "-d " : ""}${list}`
   } else if (pm === "yarn") {
     command = `yarn add ${isDev ? "-D " : ""}${list}`
   } else {

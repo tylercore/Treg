@@ -1,21 +1,15 @@
 import type {
+  AiTool,
   CommandName,
   EnabledFeatures,
   FeatureName,
   Formatter,
   FrameworkId,
-  PackageManagerOption,
   ParsedOptions,
   TestRunner,
 } from "./types.ts"
 
 const ALLOWED_COMMANDS: readonly CommandName[] = ["init", "add", "list"]
-const ALLOWED_PACKAGE_MANAGERS: readonly PackageManagerOption[] = [
-  "pnpm",
-  "npm",
-  "yarn",
-  "auto",
-]
 const ALLOWED_FRAMEWORKS: readonly FrameworkId[] = [
   "node",
   "react",
@@ -33,31 +27,29 @@ const ALLOWED_FEATURES: readonly FeatureName[] = [
 ]
 const ALLOWED_TEST_RUNNERS: readonly TestRunner[] = ["jest", "vitest"]
 const ALLOWED_FORMATTERS: readonly Formatter[] = ["prettier", "oxfmt"]
+const DEFAULT_AI_TOOLS: readonly AiTool[] = ["claude", "codex", "gemini"]
 
 export const USAGE = `Usage: treg <command> [options]
 
 Commands:
-  init                                Initialize infra rules in a project (framework auto-detected from dependencies)
+  init                                Initialize infra rules in a project (interactive setup)
   add                                 Add selected infra features to an existing project
   list                                List supported frameworks, features, formatters, and test runners
 
 Options:
+  --dry-run                           Print planned changes without writing files
+  -h, --help                          Show help
+
+Add command options:
   --framework <node|react|next|vue|svelte|nuxt>
                                       Optional framework override (default: auto-detected)
   --features <lint,format,typescript,test,husky>
                                       Features to install (all selected by default)
-  --no-format                         Skip format feature setup and avoid changing format config/scripts
-  --no-test-runner                    Skip test feature setup and avoid changing test runner/config
   --dir <path>                        Target directory (defaults to current directory)
   --formatter <prettier|oxfmt>        Formatter for format feature (default: prettier)
   --test-runner <jest|vitest>         Optional test runner override (default: vue/nuxt=vitest, others=jest)
-  --pm <pnpm|npm|yarn|auto>           Package manager (auto-detected if omitted)
   --force                             Overwrite existing config files
-  --dry-run                           Print planned changes without writing files
   --skip-husky-install                Do not run husky install
-  --skills                            Update CLAUDE.md/AGENTS.md/GEMINI.md with feature skill guidance (default: enabled)
-  --no-skills                         Disable CLAUDE.md/AGENTS.md/GEMINI.md skill guidance updates
-  -h, --help                          Show help
 `
 
 interface RawParsedOptions {
@@ -67,13 +59,11 @@ interface RawParsedOptions {
   formatter: string
   features: string[]
   testRunner: string | null
-  pm: string | null
   force: boolean
   dryRun: boolean
-  noFormat: boolean
-  noTestRunner: boolean
   skipHuskyInstall: boolean
   skills: boolean
+  aiTools: AiTool[]
   help: boolean
 }
 
@@ -86,10 +76,6 @@ function includes<T extends string>(
 
 function isCommandName(value: string): value is CommandName {
   return includes(ALLOWED_COMMANDS, value)
-}
-
-function isPackageManagerOption(value: string): value is PackageManagerOption {
-  return includes(ALLOWED_PACKAGE_MANAGERS, value)
 }
 
 function isFrameworkId(value: string): value is FrameworkId {
@@ -116,13 +102,11 @@ export function parseArgs(argv: string[]): ParsedOptions {
     formatter: "prettier",
     features: [],
     testRunner: null,
-    pm: null,
     force: false,
     dryRun: false,
-    noFormat: false,
-    noTestRunner: false,
     skipHuskyInstall: false,
     skills: true,
+    aiTools: [...DEFAULT_AI_TOOLS],
     help: false,
   }
 
@@ -141,7 +125,20 @@ export function parseArgs(argv: string[]): ParsedOptions {
 
     if (arg === "-h" || arg === "--help") {
       options.help = true
-    } else if (arg === "--framework") {
+      continue
+    }
+    if (arg === "--dry-run") {
+      options.dryRun = true
+      continue
+    }
+
+    if (options.command !== "add") {
+      throw new Error(
+        `Unsupported option for ${options.command}: ${arg}. Only --dry-run and --help are allowed.`
+      )
+    }
+
+    if (arg === "--framework") {
       options.framework = readFlagValue(argv, i, "--framework")
       i += 1
     } else if (arg.startsWith("--framework=")) {
@@ -168,25 +165,10 @@ export function parseArgs(argv: string[]): ParsedOptions {
       i += 1
     } else if (arg.startsWith("--test-runner=")) {
       options.testRunner = readInlineFlagValue(arg, "--test-runner")
-    } else if (arg === "--pm") {
-      options.pm = readFlagValue(argv, i, "--pm")
-      i += 1
-    } else if (arg.startsWith("--pm=")) {
-      options.pm = readInlineFlagValue(arg, "--pm")
     } else if (arg === "--force") {
       options.force = true
-    } else if (arg === "--dry-run") {
-      options.dryRun = true
-    } else if (arg === "--no-format") {
-      options.noFormat = true
-    } else if (arg === "--no-test-runner") {
-      options.noTestRunner = true
     } else if (arg === "--skip-husky-install") {
       options.skipHuskyInstall = true
-    } else if (arg === "--skills") {
-      options.skills = true
-    } else if (arg === "--no-skills") {
-      options.skills = false
     } else {
       throw new Error(`Unknown argument: ${arg}`)
     }
@@ -241,10 +223,6 @@ function validateParsedOptions(
     throw new Error("Missing value for --dir")
   }
 
-  if (options.pm && !isPackageManagerOption(options.pm)) {
-    throw new Error(`Unsupported package manager: ${options.pm}`)
-  }
-
   if (options.framework && !isFrameworkId(options.framework)) {
     throw new Error(`Unsupported framework: ${options.framework}`)
   }
@@ -265,17 +243,11 @@ function validateParsedOptions(
 }
 
 export function resolveFeatures(
-  options: Pick<ParsedOptions, "features" | "noFormat" | "noTestRunner">
+  options: Pick<ParsedOptions, "features">
 ): EnabledFeatures {
   const selected = new Set<FeatureName>(
     options.features.length > 0 ? options.features : ALLOWED_FEATURES
   )
-  if (options.noFormat) {
-    selected.delete("format")
-  }
-  if (options.noTestRunner) {
-    selected.delete("test")
-  }
 
   return {
     lint: selected.has("lint"),
@@ -291,6 +263,8 @@ export function printSupportedTargets() {
   console.log("Features: lint, format, typescript, test, husky")
   console.log("Formatters: prettier, oxfmt")
   console.log("Test runners: jest, vitest")
+  console.log("Package managers: pnpm, npm, yarn, bun")
+  console.log("AI tools: claude, codex, gemini")
 }
 
 export function resolveTestRunner(

@@ -1,10 +1,10 @@
 export type CommandName = "init" | "add" | "list"
 
-export type PackageManager = "pnpm" | "npm" | "yarn"
-export type PackageManagerOption = PackageManager | "auto"
+export type PackageManager = "pnpm" | "npm" | "yarn" | "bun"
 
 export type FrameworkId = "node" | "react" | "next" | "vue" | "svelte" | "nuxt"
 export type Formatter = "prettier" | "oxfmt"
+export type AiTool = "claude" | "codex" | "gemini"
 
 export type FeatureName = "lint" | "format" | "typescript" | "test" | "husky"
 export type TestRunner = "jest" | "vitest"
@@ -43,13 +43,11 @@ export interface ParsedOptions {
   formatter: Formatter
   features: FeatureName[]
   testRunner: TestRunner | null
-  pm: PackageManagerOption | null
   force: boolean
   dryRun: boolean
-  noFormat: boolean
-  noTestRunner: boolean
   skipHuskyInstall: boolean
   skills: boolean
+  aiTools: AiTool[]
   help: boolean
 }
 

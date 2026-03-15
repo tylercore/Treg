@@ -2,9 +2,9 @@ import { describe, expect, it } from "@jest/globals"
 import { parseArgs, resolveFeatures, resolveTestRunner } from "./cli.ts"
 
 describe("parseArgs", () => {
-  it("parses init command options", () => {
+  it("parses add command options", () => {
     const parsed = parseArgs([
-      "init",
+      "add",
       "--dir",
       "demo-app",
       "--framework",
@@ -15,84 +15,61 @@ describe("parseArgs", () => {
       "lint,test",
       "--test-runner",
       "vitest",
-      "--pm=npm",
       "--force",
       "--dry-run",
       "--skip-husky-install",
     ])
 
     expect(parsed).toEqual({
-      command: "init",
+      command: "add",
       projectDir: "demo-app",
       framework: "react",
       formatter: "oxfmt",
       features: ["lint", "test"],
       testRunner: "vitest",
-      pm: "npm",
       force: true,
       dryRun: true,
-      noFormat: false,
-      noTestRunner: false,
       skipHuskyInstall: true,
       skills: true,
+      aiTools: ["claude", "codex", "gemini"],
       help: false,
     })
+  })
+
+  it("parses init with only dry-run", () => {
+    const parsed = parseArgs(["init", "--dry-run"])
+    expect(parsed.command).toBe("init")
+    expect(parsed.dryRun).toBe(true)
+    expect(parsed.features).toEqual([])
   })
 
   it("parses list command", () => {
     const parsed = parseArgs(["list"])
     expect(parsed.command).toBe("list")
     expect(parsed.formatter).toBe("prettier")
-    expect(parsed.noFormat).toBe(false)
-    expect(parsed.noTestRunner).toBe(false)
+    expect(parsed.aiTools).toEqual(["claude", "codex", "gemini"])
   })
 
-  it("accepts additional frameworks", () => {
-    const parsed = parseArgs(["init", "--framework", "nuxt"])
-    expect(parsed.framework).toBe("nuxt")
-  })
-
-  it("enables skills by default", () => {
-    const parsed = parseArgs(["add"])
-    expect(parsed.skills).toBe(true)
-  })
-
-  it("supports disabling skills via --no-skills", () => {
-    const parsed = parseArgs(["add", "--no-skills"])
-    expect(parsed.skills).toBe(false)
-  })
-
-  it("accepts svelte framework", () => {
-    const parsed = parseArgs(["init", "--framework", "svelte"])
-    expect(parsed.framework).toBe("svelte")
-  })
-
-  it("allows init without framework for auto detection", () => {
+  it("allows init without options", () => {
     const parsed = parseArgs(["init"])
     expect(parsed.framework).toBeNull()
     expect(parsed.formatter).toBe("prettier")
     expect(parsed.testRunner).toBeNull()
   })
 
-  it("accepts oxfmt formatter override", () => {
+  it("accepts oxfmt formatter override for add", () => {
     const parsed = parseArgs(["add", "--formatter", "oxfmt"])
     expect(parsed.formatter).toBe("oxfmt")
   })
 
-  it("supports disabling format and test setup via no flags", () => {
-    const parsed = parseArgs(["add", "--no-format", "--no-test-runner"])
-    expect(parsed.noFormat).toBe(true)
-    expect(parsed.noTestRunner).toBe(true)
-  })
-
   it("throws for unsupported framework", () => {
-    expect(() => parseArgs(["init", "--framework", "angular"])).toThrow(
+    expect(() => parseArgs(["add", "--framework", "angular"])).toThrow(
       "Unsupported framework: angular"
     )
   })
 
   it("throws for unsupported formatter", () => {
-    expect(() => parseArgs(["init", "--formatter", "biome"])).toThrow(
+    expect(() => parseArgs(["add", "--formatter", "biome"])).toThrow(
       "Unsupported formatter: biome"
     )
   })
@@ -103,14 +80,29 @@ describe("parseArgs", () => {
 
   it("throws for unsupported feature", () => {
     expect(() =>
-      parseArgs(["init", "--framework", "node", "--features", "husky,ai"])
+      parseArgs(["add", "--framework", "node", "--features", "husky,ai"])
     ).toThrow("Unsupported feature in --features: ai")
   })
 
-  it("throws for removed framework version option", () => {
-    expect(() =>
-      parseArgs(["init", "--framework", "react", "--framework-version", "18"])
-    ).toThrow("Unknown argument: --framework-version")
+  it("throws when init receives removed flags", () => {
+    expect(() => parseArgs(["init", "--framework", "react"])).toThrow(
+      "Unsupported option for init: --framework"
+    )
+  })
+
+  it("throws when add receives removed pm flag", () => {
+    expect(() => parseArgs(["add", "--pm", "npm"])).toThrow(
+      "Unknown argument: --pm"
+    )
+  })
+
+  it("throws for removed no flags", () => {
+    expect(() => parseArgs(["add", "--no-format"])).toThrow(
+      "Unknown argument: --no-format"
+    )
+    expect(() => parseArgs(["add", "--no-test-runner"])).toThrow(
+      "Unknown argument: --no-test-runner"
+    )
   })
 })
 
@@ -134,46 +126,6 @@ describe("resolveFeatures", () => {
       typescript: false,
       test: false,
       husky: true,
-    })
-  })
-
-  it("disables format feature when --no-format is provided", () => {
-    expect(resolveFeatures(parseArgs(["add", "--no-format"]))).toEqual({
-      lint: true,
-      format: false,
-      typescript: true,
-      test: true,
-      husky: true,
-    })
-  })
-
-  it("disables test feature when --no-test-runner is provided", () => {
-    expect(resolveFeatures(parseArgs(["add", "--no-test-runner"]))).toEqual({
-      lint: true,
-      format: true,
-      typescript: true,
-      test: false,
-      husky: true,
-    })
-  })
-
-  it("keeps no flags taking precedence over --features", () => {
-    expect(
-      resolveFeatures(
-        parseArgs([
-          "add",
-          "--features",
-          "format,test",
-          "--no-format",
-          "--no-test-runner",
-        ])
-      )
-    ).toEqual({
-      lint: false,
-      format: false,
-      typescript: false,
-      test: false,
-      husky: false,
     })
   })
 })

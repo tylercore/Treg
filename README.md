@@ -3,8 +3,7 @@
 [繁體中文 README](./README.zh-hant.md)
 
 `treg` is a CLI for applying project tooling standards to an existing repository.
-
-It focuses on infrastructure setup only:
+It only handles infrastructure setup:
 
 - lint
 - format
@@ -13,122 +12,121 @@ It focuses on infrastructure setup only:
 - husky
 - AI skill guidance
 
-## Why Use treg
-
-`treg` helps teams enforce a consistent baseline quickly without manually wiring every tool in each repo.
-
-Use it when you want to:
-
-- bootstrap tooling in an existing project
-- apply only selected setup items
-- keep runs repeatable and safe (`idempotent`)
-- preview changes before writing files (`--dry-run`)
-
 ## Quick Start
 
 ```bash
 npx @tyyyho/treg init
 ```
 
-```bash
-pnpm dlx @tyyyho/treg init
-```
+## Commands
 
-## Command Overview
+- `init`: Initialize.
+- `add`: Add selected features to an existing project.
+- `list`: Show supported frameworks/features/formatters/test runners.
 
-- `init`: Apply infra rules with framework auto-detection.
-- `add`: Apply only selected features.
-- `list`: Show supported frameworks, features, formatters, and test runners.
+## Init Interactive Flow
+
+After `init`, `treg` asks:
+
+1. Package manager (`pnpm|npm|yarn|bun`)
+2. Features (default selected: `all`)
+3. Test runner (only when `test` is selected)
+4. Formatter (only when `format` is selected)
+5. AI tools (`Claude|codex|gemini`, multi-select, only when AI skill guidance is selected)
+
+Default `all` includes:
+
+- lint
+- format
+- TypeScript
+- test
+- husky
+- AI skill guidance
 
 ## Common Usage
 
-Initialize with auto-detection:
+Initialize with interactive prompts:
 
 ```bash
 npx @tyyyho/treg init
 ```
 
-Initialize with explicit framework:
+Preview init plan only:
 
 ```bash
-npx @tyyyho/treg init --framework react
+npx @tyyyho/treg init --dry-run
 ```
 
-Apply only lint + format:
+Add only lint + format:
 
 ```bash
 npx @tyyyho/treg add --features lint,format
 ```
 
-Use `oxfmt` for formatting:
+Add format using `oxfmt`:
 
 ```bash
 npx @tyyyho/treg add --features format --formatter oxfmt
 ```
 
-Skip format/test setup to keep existing project config untouched:
+Add test using `vitest`:
 
 ```bash
-npx @tyyyho/treg add --no-format --no-test-runner
+npx @tyyyho/treg add --features test --test-runner vitest
 ```
 
-Preview plan without writing files:
+## CLI Options
 
-```bash
-npx @tyyyho/treg init --framework react --dry-run
+`init` options:
+
+```text
+--dry-run
+--help
 ```
 
-Target a specific directory:
+`add` options:
 
-```bash
-npx @tyyyho/treg init --framework react --dir ./packages/web
+```text
+--framework <node|react|next|vue|svelte|nuxt>
+--features <lint,format,typescript,test,husky>
+--dir <path>
+--formatter <prettier|oxfmt>
+--test-runner <jest|vitest>
+--force
+--dry-run
+--skip-husky-install
+--help
 ```
 
-## Key Defaults
+## Defaults
 
 Framework detection order:
 
 `nuxt -> next -> react -> vue -> svelte -> node`
 
-Test runner defaults:
+Test runner default:
 
 - `vue` / `nuxt`: `vitest`
 - others: `jest`
 
 Formatter default:
 
-- `prettier` (override with `--formatter oxfmt`)
-
-## CLI Options
-
-```text
---framework <node|react|next|vue|svelte|nuxt>
---features <lint,format,typescript,test,husky>
---no-format
---no-test-runner
---dir <path>
---formatter <prettier|oxfmt>
---test-runner <jest|vitest>
---pm <pnpm|npm|yarn|auto>
---force
---dry-run
---skip-husky-install
---skills
---no-skills
---help
-```
+- `prettier`
 
 ## AI Skills Behavior
 
-When skills are enabled:
-
-- `treg` updates existing `CLAUDE.md`, `AGENTS.md`, and/or `GEMINI.md` if present.
-- `treg` does not create those files when they do not exist.
+- AI guidance updates only selected tools' files:
+  - `Claude -> CLAUDE.md`
+  - `codex -> AGENTS.md`
+  - `gemini -> GEMINI.md`
+- Files are updated only if they already exist in repo root.
+- Missing files are skipped and never auto-created.
+- Skill files are generated once per enabled feature.
 
 ## Release
 
 ```bash
-pnpm release patch
+npm run release -- patch
 ```
 
 Supported targets:

@@ -3,7 +3,6 @@
 [English README](./README.md)
 
 `treg` 是一個用於既有專案的 CLI，可快速套用一致的工具鏈規範。
-
 它只處理基礎設施設定：
 
 - lint
@@ -13,78 +12,93 @@
 - husky
 - AI skill 指引
 
-## 為什麼用 treg
-
-`treg` 可以在既有 repo 中快速建立一致的開發基線，避免每次手動重接工具。
-
-適合用在：
-
-- 快速補齊專案工具鏈
-- 只套用部分 feature
-- 需要可重跑且不破壞設定（`idempotent`）
-- 先看完整計畫再寫檔（`--dry-run`）
-
 ## 快速開始
 
 ```bash
 npx @tyyyho/treg init
 ```
 
-```bash
-pnpm dlx @tyyyho/treg init
-```
-
 ## 指令總覽
 
-- `init`：依賴自動偵測 framework 並套用基礎規範。
-- `add`：只套用指定 features。
-- `list`：列出支援的 framework、feature、formatter、test runner。
+- `init`：初始化功能。
+- `add`：只為既有專案加入指定功能。
+- `list`：列出支援的 framework/feature/formatter/test runner。
+
+## Init 互動流程
+
+執行 `init` 後，`treg` 會依序詢問：
+
+1. 套件管理器（`pnpm|npm|yarn|bun`）
+2. 要加入的功能（預設勾選 `all`）
+3. 測試工具（僅在選到 `test` 時詢問）
+4. Formatter（僅在選到 `format` 時詢問）
+5. AI 工具（`Claude|codex|gemini` 可複選，僅在選到 AI skill guidance 時詢問）
+
+預設 `all` 內容：
+
+- lint
+- format
+- TypeScript
+- test
+- husky
+- AI skill guidance
 
 ## 常見用法
 
-自動偵測 framework 初始化：
+初始化：
 
 ```bash
 npx @tyyyho/treg init
 ```
 
-手動指定 framework：
+只預覽 init 計畫：
 
 ```bash
-npx @tyyyho/treg init --framework react
+npx @tyyyho/treg init --dry-run
 ```
 
-只套用 lint + format：
+只加入 lint + format：
 
 ```bash
 npx @tyyyho/treg add --features lint,format
 ```
 
-format 改用 `oxfmt`：
+format 使用 `oxfmt`：
 
 ```bash
 npx @tyyyho/treg add --features format --formatter oxfmt
 ```
 
-保留既有設定，跳過 format/test：
+test 使用 `vitest`：
 
 ```bash
-npx @tyyyho/treg add --no-format --no-test-runner
+npx @tyyyho/treg add --features test --test-runner vitest
 ```
 
-只預覽計畫不寫檔：
+## CLI 參數
 
-```bash
-npx @tyyyho/treg init --framework react --dry-run
+`init` 可用參數：
+
+```text
+--dry-run
+--help
 ```
 
-指定目標目錄：
+`add` 可用參數：
 
-```bash
-npx @tyyyho/treg init --framework react --dir ./packages/web
+```text
+--framework <node|react|next|vue|svelte|nuxt>
+--features <lint,format,typescript,test,husky>
+--dir <path>
+--formatter <prettier|oxfmt>
+--test-runner <jest|vitest>
+--force
+--dry-run
+--skip-husky-install
+--help
 ```
 
-## 重要預設
+## 預設行為
 
 framework 偵測順序：
 
@@ -97,38 +111,22 @@ framework 偵測順序：
 
 formatter 預設：
 
-- `prettier`（可用 `--formatter oxfmt` 覆寫）
-
-## CLI 參數
-
-```text
---framework <node|react|next|vue|svelte|nuxt>
---features <lint,format,typescript,test,husky>
---no-format
---no-test-runner
---dir <path>
---formatter <prettier|oxfmt>
---test-runner <jest|vitest>
---pm <pnpm|npm|yarn|auto>
---force
---dry-run
---skip-husky-install
---skills
---no-skills
---help
-```
+- `prettier`
 
 ## AI Skills 行為
 
-啟用 skills 時：
-
-- 若 repo root 已存在 `CLAUDE.md`、`AGENTS.md`、`GEMINI.md`，會更新對應內容。
-- 若檔案不存在，不會自動建立。
+- 只會更新選擇的 AI 工具對應檔案：
+  - `Claude -> CLAUDE.md`
+  - `codex -> AGENTS.md`
+  - `gemini -> GEMINI.md`
+- 僅更新 repo root 已存在的檔案。
+- 不存在的檔案會跳過，不會自動建立。
+- 每個啟用功能的 skill 檔只會建立一次。
 
 ## 發布
 
 ```bash
-pnpm release patch
+npm run release -- patch
 ```
 
 支援目標：

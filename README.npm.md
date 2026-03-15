@@ -1,8 +1,8 @@
 # @tyyyho/treg
 
-`treg` is a CLI for applying tooling standards in existing repositories.
+`treg` applies tooling standards to existing repositories.
 
-It sets up infrastructure only:
+Scope:
 
 - lint
 - format
@@ -11,71 +11,59 @@ It sets up infrastructure only:
 - husky
 - AI skill guidance
 
-## Quick Start
+Quick start:
 
 ```bash
 npx @tyyyho/treg init
 ```
 
-## Commands
+Commands:
 
 - `init`
 - `add`
 - `list`
 
-## Common Examples
+`init` interactive questions:
 
-Initialize with auto-detection:
+1. package manager (`pnpm|npm|yarn|bun`)
+2. features (default: `all`)
+3. test runner (if `test` is selected)
+4. formatter (if `format` is selected)
+5. ai tools (`Claude|codex|gemini`, multi-select, if AI skill guidance is selected)
 
-```bash
-npx @tyyyho/treg init
-```
-
-Initialize with explicit framework:
-
-```bash
-npx @tyyyho/treg init --framework react
-```
-
-Apply selected features:
+`add` examples:
 
 ```bash
 npx @tyyyho/treg add --features lint,format
-```
-
-Use `oxfmt`:
-
-```bash
 npx @tyyyho/treg add --features format --formatter oxfmt
+npx @tyyyho/treg add --features test --test-runner vitest
 ```
 
-Skip format and test setup:
+Options:
 
-```bash
-npx @tyyyho/treg add --no-format --no-test-runner
+`init`:
+
+```text
+--dry-run
+--help
 ```
 
-Preview only:
-
-```bash
-npx @tyyyho/treg init --dry-run
-```
-
-## Key Options
+`add`:
 
 ```text
 --framework <node|react|next|vue|svelte|nuxt>
 --features <lint,format,typescript,test,husky>
---no-format
---no-test-runner
+--dir <path>
 --formatter <prettier|oxfmt>
 --test-runner <jest|vitest>
---pm <pnpm|npm|yarn|auto>
---dir <path>
 --force
 --dry-run
 --skip-husky-install
---skills
---no-skills
 --help
 ```
+
+Defaults:
+
+- framework detect order: `nuxt -> next -> react -> vue -> svelte -> node`
+- test runner: `vue/nuxt = vitest`, others = `jest`
+- formatter: `prettier`

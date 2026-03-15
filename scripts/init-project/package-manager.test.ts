@@ -18,4 +18,10 @@ describe("detectPackageManager", () => {
     )
     expect(detectPackageManager(baseDir)).toBe("pnpm")
   })
+
+  it("detects bun from lockfile", async () => {
+    const baseDir = await mkdtemp(path.join(os.tmpdir(), "treg-pm-"))
+    await writeFile(path.join(baseDir, "bun.lockb"), "")
+    expect(detectPackageManager(baseDir)).toBe("bun")
+  })
 })
