@@ -1,8 +1,16 @@
-# @tyyyho/treg（繁體中文）
+# @tyyyho/Treg（繁體中文）
+
+[![npm version](https://img.shields.io/npm/v/%40tyyyho%2Ftreg)](https://www.npmjs.com/package/%40tyyyho%2Ftreg)
+[![License](https://img.shields.io/npm/l/%40tyyyho%2Ftreg)](https://www.npmjs.com/package/%40tyyyho%2Ftreg)
+[![npm downloads](https://img.shields.io/npm/dm/%40tyyyho%2Ftreg)](https://www.npmjs.com/package/%40tyyyho%2Ftreg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 
 [English README](./README.md)
 
-`treg` 是一個用於既有專案的 CLI，可快速套用一致的工具鏈規範。
+Treg（Regulatory T Cell）是一個為專案注入「免疫系統」的 CLI 工具。
+當人與 AI 協作並快速迭代時，程式碼容易失去秩序與一致性；`treg` 的角色就像生物中的 T 細胞，負責維持系統平衡、抑制混亂，確保專案在快速迭代中仍然保持乾淨、可維護與可擴展。
+
+透過一次性的初始化，`treg` 會為既有專案建立一套穩定的工程基線，例如 TypeScript、ESLint、Prettier、Husky 以及規範化設定，讓開發流程具備基本的「免疫防護」，避免錯誤與風格混亂在專案中持續累積。
 它只處理基礎設施設定：
 
 - lint
@@ -15,7 +23,7 @@
 ## 快速開始
 
 ```bash
-npx @tyyyho/treg init
+npx @tyyyho/Treg init
 ```
 
 ## 指令總覽
@@ -48,31 +56,31 @@ npx @tyyyho/treg init
 初始化：
 
 ```bash
-npx @tyyyho/treg init
+npx @tyyyho/Treg init
 ```
 
 只預覽 init 計畫：
 
 ```bash
-npx @tyyyho/treg init --dry-run
+npx @tyyyho/Treg init --dry-run
 ```
 
 只加入 lint + format：
 
 ```bash
-npx @tyyyho/treg add --features lint,format
+npx @tyyyho/Treg add --features lint,format
 ```
 
 format 使用 `oxfmt`：
 
 ```bash
-npx @tyyyho/treg add --features format --formatter oxfmt
+npx @tyyyho/Treg add --features format --formatter oxfmt
 ```
 
 test 使用 `vitest`：
 
 ```bash
-npx @tyyyho/treg add --features test --test-runner vitest
+npx @tyyyho/Treg add --features test --test-runner vitest
 ```
 
 ## CLI 參數

@@ -1,6 +1,7 @@
-# @tyyyho/treg
+# @tyyyho/Treg
 
-`treg` applies tooling standards to existing repositories.
+Treg (Regulatory T Cell) injects an "immune system" into existing repositories.
+It keeps code quality and consistency stable during fast human-AI collaboration by enforcing a clean, maintainable, and extensible engineering baseline.
 
 Scope:
 
@@ -14,7 +15,7 @@ Scope:
 Quick start:
 
 ```bash
-npx @tyyyho/treg init
+npx @tyyyho/Treg init
 ```
 
 Commands:
@@ -34,9 +35,9 @@ Commands:
 `add` examples:
 
 ```bash
-npx @tyyyho/treg add --features lint,format
-npx @tyyyho/treg add --features format --formatter oxfmt
-npx @tyyyho/treg add --features test --test-runner vitest
+npx @tyyyho/Treg add --features lint,format
+npx @tyyyho/Treg add --features format --formatter oxfmt
+npx @tyyyho/Treg add --features test --test-runner vitest
 ```
 
 Options:

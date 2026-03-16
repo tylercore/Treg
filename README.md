@@ -1,8 +1,16 @@
-# @tyyyho/treg
+# @tyyyho/Treg
+
+[![npm version](https://img.shields.io/npm/v/%40tyyyho%2Ftreg)](https://www.npmjs.com/package/%40tyyyho%2Ftreg)
+[![License](https://img.shields.io/npm/l/%40tyyyho%2Ftreg)](https://www.npmjs.com/package/%40tyyyho%2Ftreg)
+[![npm downloads](https://img.shields.io/npm/dm/%40tyyyho%2Ftreg)](https://www.npmjs.com/package/%40tyyyho%2Ftreg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 
 [繁體中文 README](./README.zh-hant.md)
 
-`treg` is a CLI for applying project tooling standards to an existing repository.
+Treg (Regulatory T Cell) is a CLI tool that injects an "immune system" into your project.
+When people and AI collaborate and iterate quickly, code can easily lose order and consistency; `treg` acts like biological T cells to maintain balance and suppress chaos, so your project stays clean, maintainable, and extensible during rapid iteration.
+
+With one-time initialization, `treg` establishes a stable engineering baseline for existing repositories, including TypeScript, ESLint, Prettier, Husky, and standardized conventions. This gives your workflow foundational "immune protection" and prevents errors and style drift from continuously accumulating.
 It only handles infrastructure setup:
 
 - lint
@@ -15,7 +23,7 @@ It only handles infrastructure setup:
 ## Quick Start
 
 ```bash
-npx @tyyyho/treg init
+npx @tyyyho/Treg init
 ```
 
 ## Commands
@@ -48,31 +56,31 @@ Default selected features include:
 Initialize with interactive prompts:
 
 ```bash
-npx @tyyyho/treg init
+npx @tyyyho/Treg init
 ```
 
 Preview init plan only:
 
 ```bash
-npx @tyyyho/treg init --dry-run
+npx @tyyyho/Treg init --dry-run
 ```
 
 Add only lint + format:
 
 ```bash
-npx @tyyyho/treg add --features lint,format
+npx @tyyyho/Treg add --features lint,format
 ```
 
 Add format using `oxfmt`:
 
 ```bash
-npx @tyyyho/treg add --features format --formatter oxfmt
+npx @tyyyho/Treg add --features format --formatter oxfmt
 ```
 
 Add test using `vitest`:
 
 ```bash
-npx @tyyyho/treg add --features test --test-runner vitest
+npx @tyyyho/Treg add --features test --test-runner vitest
 ```
 
 ## CLI Options
