@@ -1,6 +1,6 @@
 # @tyyyho/treg
 
-Treg (Regulatory T Cell) injects an "immune system" into existing repositories.
+Treg injects an "immune system" into existing repositories.
 It keeps code quality and consistency stable during fast human-AI collaboration by enforcing a clean, maintainable, and extensible engineering baseline.
 
 Scope:

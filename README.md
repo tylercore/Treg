@@ -7,7 +7,7 @@
 
 [繁體中文 README](./README.zh-hant.md)
 
-Treg (Regulatory T Cell) is a CLI tool that injects an "immune system" into your project.
+Treg is a CLI tool that injects an "immune system" into your project.
 When people and AI collaborate and iterate quickly, code can easily lose order and consistency; `treg` acts like biological T cells to maintain balance and suppress chaos, so your project stays clean, maintainable, and extensible during rapid iteration.
 
 With one-time initialization, `treg` establishes a stable engineering baseline for existing repositories, including TypeScript, ESLint, Prettier, Husky, and standardized conventions. This gives your workflow foundational "immune protection" and prevents errors and style drift from continuously accumulating.
