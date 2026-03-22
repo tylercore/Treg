@@ -68,5 +68,5 @@
 ## AI rules
 
 - 每個 feature 對應一個 skill。
-- 若啟用 skills，會依使用者選擇的 AI tools 更新對應檔案（`CLAUDE.md`、`AGENTS.md`、`GEMINI.md`）。
+- 若啟用 ai-rules（`skills` 選項），會依使用者選擇的 AI tools 更新對應檔案（`CLAUDE.md`、`AGENTS.md`、`GEMINI.md`）。
 - 若對應檔案不存在，需先自動建立再注入說明。

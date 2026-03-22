@@ -29,7 +29,7 @@ It focuses only on **infrastructure setup**, not application logic.
 - **Prettier / Oxfmt**
 - **Jest / Vitest**
 - **Husky git hooks**
-- **AI skill guidance**
+- **AI rules guidance**
 
 These guardrails help maintain long‑term code health during fast
 iteration.
