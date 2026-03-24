@@ -10,7 +10,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![CLI](https://img.shields.io/badge/CLI-Interactive-111827?style=for-the-badge&logo=gnubash&logoColor=white)
 
-[繁體中文 README](./README.zh-hant.md)
+[中文 README](./README.zh-hant.md)
 
 </div>
 

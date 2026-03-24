@@ -2,7 +2,7 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F172A,30:1D4ED8,70:7C3AED,100:22C55E&height=260&section=header&text=Treg&fontSize=72&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=Inject%20an%20immune%20system%20into%20your%20codebase&descSize=20&descAlignY=58" width="100%" />
 
-# @tylercore/treg（繁體中文）
+# @tylercore/treg（中文）
 
 [![npm version](https://img.shields.io/npm/v/%40tylercore%2Ftreg?style=for-the-badge)](https://www.npmjs.com/package/%40tylercore%2Ftreg)
 [![License](https://img.shields.io/npm/l/%40tylercore%2Ftreg?style=for-the-badge)](https://www.npmjs.com/package/%40tylercore%2Ftreg)
