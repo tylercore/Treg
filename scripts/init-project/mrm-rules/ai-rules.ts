@@ -10,7 +10,7 @@ import { existsSync } from "node:fs"
 import { promises as fs } from "node:fs"
 import path from "node:path"
 
-const SKILL_SECTION_HEADING = "## Treg AI Rules"
+const SKILL_SECTION_HEADING = "## Treg Rules"
 const LEGACY_SKILL_SECTION_HEADINGS = ["## Treg AI Guide", "## Treg AI Skills"]
 const SKILLS_BASE_DIR = "skills"
 const AI_TOOL_DOCS: Record<AiTool, string> = {
