@@ -18,13 +18,16 @@
 
 ## Overview
 
-**Treg**
+## What is Treg?
 
-It is a CLI tool designed to inject an **immune system** into your project.  
-When Developer and AI collaborate at high speed, codebases can drift into inconsistency, duplicated rules, and fragile workflows.  
-`Treg` plays the role of a regulatory T cell: it helps restore balance, suppress avoidable chaos, and keep the repository **clean, maintainable, and extensible**.
+Treg is a CLI tool that sets up code quality, tooling, and project standards for modern applications.
 
-Instead of generating app logic, `Treg` focuses on the engineering baseline that protects a project from long-term entropy.
+It injects an **engineering immune system** into your project.
+
+When developers and AI collaborate under fast iteration, codebases tend to drift—leading to inconsistent tooling, duplicated rules, and fragile workflows.  
+Treg acts like a regulatory T cell: it restores balance, suppresses unnecessary chaos, and keeps your repository **clean, maintainable, and extensible**.
+
+Instead of generating application logic, Treg focuses on the engineering baseline—configuring tools like ESLint, Prettier, and TypeScript to protect your project from long-term entropy.
 
 > **Regulate the workflow before the workflow regulates you.**
 

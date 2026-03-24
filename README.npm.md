@@ -9,14 +9,16 @@ downloads](https://img.shields.io/npm/dm/%40tylercore%2Ftreg)](https://www.npmjs
 
 ## Overview
 
-**Treg** is a CLI tool that injects an **engineering immune system** into your project.
+## What is Treg?
 
-When humans and AI collaborate and iterate rapidly, repositories often
-accumulate inconsistent tooling, style drift, and fragile workflows.\
-`Treg` helps maintain balance by establishing a clean and consistent
-development baseline.
+Treg is a CLI tool for setting up code quality, tooling, and project standards.
 
-It focuses only on **infrastructure setup**, not application logic.
+It injects an **engineering immune system** into your project.
+
+When developers and AI collaborate under fast iteration, codebases tend to drift—introducing inconsistency and fragile workflows.  
+Treg restores balance and keeps your project **clean, maintainable, and scalable**.
+
+It focuses on infrastructure setup (ESLint, Prettier, TypeScript), not application logic.
 
 ---
 
