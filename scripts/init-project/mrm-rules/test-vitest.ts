@@ -15,7 +15,7 @@ export default defineConfig({
 }
 
 function getVitestSetup(framework: Framework): string {
-  if (framework.id === "react") {
+  if (framework.id === "react" || framework.id === "tanstack-start") {
     return `import "@testing-library/jest-dom/vitest"
 `
   }
@@ -29,7 +29,7 @@ export async function runTestVitestRule(context: RuleContext): Promise<void> {
   if (framework.testEnvironment === "jsdom") {
     deps.push("jsdom")
   }
-  if (framework.id === "react") {
+  if (framework.id === "react" || framework.id === "tanstack-start") {
     deps.push("@testing-library/jest-dom")
     deps.push("@testing-library/react")
   }

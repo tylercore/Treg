@@ -2,7 +2,7 @@ export type CommandName = "init" | "setup" | "add" | "list"
 
 export type PackageManager = "pnpm" | "npm" | "yarn" | "bun"
 
-export type FrameworkId = "node" | "react" | "next" | "vue" | "svelte" | "nuxt"
+export type FrameworkId = "node" | "react" | "next" | "tanstack-start" | "vue" | "svelte" | "nuxt"
 export type Formatter = "prettier" | "oxfmt"
 export type AiTool = "claude" | "codex" | "gemini"
 

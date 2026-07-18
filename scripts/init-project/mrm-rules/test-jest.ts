@@ -15,7 +15,7 @@ module.exports = config
 }
 
 function getSetupFile(frameworkId: Framework["id"]): string {
-  if (frameworkId === "react") {
+  if (frameworkId === "react" || frameworkId === "tanstack-start") {
     return `require("@testing-library/jest-dom")
 
 // Jest setup (add custom matchers or globals here)
@@ -31,7 +31,7 @@ export async function runTestJestRule(context: RuleContext): Promise<void> {
   if (framework.testEnvironment === "jsdom") {
     deps.push("jest-environment-jsdom")
   }
-  if (framework.id === "react") {
+  if (framework.id === "react" || framework.id === "tanstack-start") {
     deps.push("@testing-library/jest-dom")
     deps.push("@testing-library/react")
   }

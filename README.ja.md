@@ -105,9 +105,11 @@ npx @tylercore/treg add zustand
 
 ## `init` のフロー
 
-`init` 実行時、`Treg` は package manager と framework（検出順: `nuxt -> next -> react -> vue -> svelte -> node`）を自動検出し、既定の features（lint、format、TypeScript、test、husky、AI rules guidance）を適用します。
+`init` 実行時、`Treg` は package manager と framework（検出順: `nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node`）を自動検出し、既定の features（lint、format、TypeScript、test、husky、AI rules guidance）を適用します。
 
 唯一の質問は、検出した framework の既定 Packages をインストールするかどうかです。`Yes` を選ぶと既定パッケージセットをインストールし、関連する AI rules guidance も書き込みます。`No` を選ぶとパッケージのインストールをスキップします。
+
+TanStack Start プロジェクトの既定パッケージセットには、Zod、date-fns、TanStack Query、Router、Form、Store、Table が含まれます。
 
 ---
 
@@ -146,7 +148,7 @@ npx @tylercore/treg add zustand
 
 7. **Packages**（パッケージインストールを選んだ場合のみ）
    - Zod や date-fns など、全 framework 共通の選択肢
-   - Tailwind CSS、Zustand / Pinia、TanStack Query、TanStack Router、framework 別 i18n などの選択肢
+   - Tailwind CSS、Zustand / Pinia、TanStack Query / Router / Form / Store / Table、framework 別 i18n などの選択肢
    - 何も選ばずに次へ進めます
 
 pnpm を使う場合、Treg は既存の `node_modules` が現在の pnpm が使う store と異なる store にリンクされていないかを確認します。store の不一致を検出した場合、Treg はファイルを自動削除せず、停止して再構築手順を表示します。`rm -rf node_modules` と `pnpm install` を手動で実行してから、Treg を再実行してください。
@@ -228,7 +230,7 @@ npx @tylercore/treg add zustand
 
 ```text
 add <lint|format|typescript|test|husky|package-preset>
---framework <node|react|next|vue|svelte|nuxt>
+--framework <node|react|next|tanstack-start|vue|svelte|nuxt>
 --dir <path>
 --formatter <prettier|oxfmt>
 --test-runner <jest|vitest>
@@ -247,7 +249,7 @@ add <lint|format|typescript|test|husky|package-preset>
 検出順序:
 
 ```text
-nuxt -> next -> react -> vue -> svelte -> node
+nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
 
 ### Test Runner

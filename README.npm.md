@@ -100,8 +100,10 @@ npx @tylercore/treg add zustand
 Framework detection order:
 
 ```text
-nuxt -> next -> react -> vue -> svelte -> node
+nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
+
+TanStack Start defaults include Zod, date-fns, TanStack Query, Router, Form, Store, and Table.
 
 Default test runner:
 

@@ -6,6 +6,7 @@ import { nodePackagePresets } from "./node/packages.ts"
 import { nuxtPackagePresets } from "./nuxt/packages.ts"
 import { reactPackagePresets } from "./react/packages.ts"
 import { sveltePackagePresets } from "./svelte/packages.ts"
+import { tanstackStartPackagePresets } from "./tanstack-start/packages.ts"
 import { vuePackagePresets } from "./vue/packages.ts"
 
 const FRAMEWORK_PACKAGE_PRESETS: Record<FrameworkId, readonly PackagePreset[]> = {
@@ -14,6 +15,7 @@ const FRAMEWORK_PACKAGE_PRESETS: Record<FrameworkId, readonly PackagePreset[]> =
   nuxt: nuxtPackagePresets,
   react: reactPackagePresets,
   svelte: sveltePackagePresets,
+  "tanstack-start": tanstackStartPackagePresets,
   vue: vuePackagePresets,
 }
 
@@ -27,6 +29,15 @@ const DEFAULT_PACKAGE_PRESET_IDS: Record<FrameworkId, readonly PackagePresetId[]
   nuxt: ["zod", "date-fns", "pinia", "tanstack-query", "vueuse"],
   react: ["zod", "date-fns", "zustand", "tanstack-query", "tanstack-router"],
   svelte: ["zod", "date-fns", "tanstack-query", "forms"],
+  "tanstack-start": [
+    "zod",
+    "date-fns",
+    "tanstack-query",
+    "tanstack-router",
+    "tanstack-form",
+    "tanstack-store",
+    "tanstack-table",
+  ],
   vue: ["zod", "date-fns", "pinia", "tanstack-query", "vueuse"],
 }
 

@@ -108,7 +108,7 @@ npx @tylercore/treg add zustand
 During `init`, `Treg` auto-detects:
 
 - package manager
-- framework, in detection order `nuxt -> next -> react -> vue -> svelte -> node`
+- framework, in detection order `nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node`
 
 It then applies the default features:
 
@@ -120,6 +120,8 @@ It then applies the default features:
 - AI rules guidance
 
 The only prompt is whether to install default Packages for the detected framework. Selecting `Yes` installs the framework default package preset set and writes package-specific AI rules guidance. Selecting `No` skips package installation.
+
+For TanStack Start projects, the default package set includes Zod, date-fns, TanStack Query, Router, Form, Store, and Table.
 
 ---
 
@@ -158,7 +160,7 @@ During `setup`, `Treg` asks for:
 
 7. **Packages** (only when package installation is selected)
    - Shared options for every framework, such as Zod and date-fns
-   - Framework-specific options, such as Tailwind CSS, Zustand or Pinia, TanStack Query, TanStack Router, and framework i18n packages
+   - Framework-specific options, such as Tailwind CSS, Zustand or Pinia, the TanStack Query/Router/Form/Store/Table suite, and framework i18n packages
    - You can leave this selection empty and continue.
 
 Node.js is treated as a backend target, so its package list focuses on server, configuration, logging, and database tooling.
@@ -250,7 +252,7 @@ npx @tylercore/treg add zustand
 
 ```text
 add <lint|format|typescript|test|husky|package-preset>
---framework <node|react|next|vue|svelte|nuxt>
+--framework <node|react|next|tanstack-start|vue|svelte|nuxt>
 --dir <path>
 --formatter <prettier|oxfmt>
 --test-runner <jest|vitest>
@@ -269,7 +271,7 @@ add <lint|format|typescript|test|husky|package-preset>
 Detection order:
 
 ```text
-nuxt -> next -> react -> vue -> svelte -> node
+nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
 
 ### Test Runner

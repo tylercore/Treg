@@ -105,9 +105,11 @@ npx @tylercore/treg add zustand
 
 ## Flujo de `init`
 
-Durante `init`, `Treg` detecta el package manager y el framework (orden: `nuxt -> next -> react -> vue -> svelte -> node`) y aplica las features por defecto: lint, format, TypeScript, test, husky y AI rules guidance.
+Durante `init`, `Treg` detecta el package manager y el framework (orden: `nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node`) y aplica las features por defecto: lint, format, TypeScript, test, husky y AI rules guidance.
 
 La única pregunta es si se instalan los Packages por defecto del framework detectado. `Yes` instala el conjunto de paquetes por defecto y escribe sus guías de AI rules; `No` omite la instalación de paquetes.
+
+Para proyectos TanStack Start, el conjunto predeterminado incluye Zod, date-fns, TanStack Query, Router, Form, Store y Table.
 
 ---
 
@@ -146,7 +148,7 @@ Durante `setup`, `Treg` pregunta:
 
 7. **Packages** (solo si se selecciona instalar paquetes)
    - Opciones compartidas por todos los frameworks, como Zod y date-fns
-   - Opciones por framework, como Tailwind CSS, Zustand o Pinia, TanStack Query, TanStack Router y paquetes i18n
+   - Opciones por framework, como Tailwind CSS, Zustand o Pinia, el conjunto TanStack Query/Router/Form/Store/Table y paquetes i18n
    - Puedes dejar esta selección vacía y continuar
 
 Cuando se usa pnpm, Treg comprueba si el `node_modules` existente está enlazado a un store diferente del que quiere usar la versión activa de pnpm. Si detecta una diferencia de store, Treg se detiene y muestra una indicación para reconstruirlo, sin borrar archivos automáticamente. Reconstruye `node_modules` manualmente con `rm -rf node_modules` y `pnpm install`, y luego vuelve a ejecutar Treg.
@@ -228,7 +230,7 @@ npx @tylercore/treg add zustand
 
 ```text
 add <lint|format|typescript|test|husky|package-preset>
---framework <node|react|next|vue|svelte|nuxt>
+--framework <node|react|next|tanstack-start|vue|svelte|nuxt>
 --dir <path>
 --formatter <prettier|oxfmt>
 --test-runner <jest|vitest>
@@ -247,7 +249,7 @@ add <lint|format|typescript|test|husky|package-preset>
 Orden de detección:
 
 ```text
-nuxt -> next -> react -> vue -> svelte -> node
+nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
 
 ### Test runner

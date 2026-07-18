@@ -20,6 +20,7 @@
   - `scripts/init-project/frameworks/node/*`
   - `scripts/init-project/frameworks/react/*`
   - `scripts/init-project/frameworks/next/*`
+  - `scripts/init-project/frameworks/tanstack-start/*`
   - `scripts/init-project/frameworks/vue/*`
   - `scripts/init-project/frameworks/svelte/*`
 - 每個框架僅維持單一版本設定，不再支援版本子目錄變體。
@@ -55,7 +56,8 @@
 
 ## CLI behavior rules
 
-- `init` 需自動偵測 package manager 與 framework（順序：`nuxt -> next -> react -> vue -> svelte -> node`），並套用各 framework 的預設 features 與 package preset 組合。
+- `init` 需自動偵測 package manager 與 framework（順序：`nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node`），並套用各 framework 的預設 features 與 package preset 組合。
+- TanStack Start 的預設 package preset 組合包含常用套件與 TanStack Query、Router、Form、Store、Table。
 - `init` 唯一互動選項為是否安裝預設 Packages；`Yes` 安裝預設 packages，`No` 不安裝 packages。
 - `init` 僅保留 `--dry-run`（與 `--help`）參數。
 - `setup` 相當於可自訂的初始化流程，依序詢問：package manager、features、test runner（可跳過）、formatter（可跳過）、ai tools（可複選，可跳過）、Packages。

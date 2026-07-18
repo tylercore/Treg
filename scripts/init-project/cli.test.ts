@@ -75,6 +75,12 @@ describe("parseArgs", () => {
     )
   })
 
+  it("accepts TanStack Start as an explicit framework", () => {
+    expect(parseArgs(["add", "tanstack-form", "--framework", "tanstack-start"]).framework).toBe(
+      "tanstack-start"
+    )
+  })
+
   it("throws for unsupported formatter", () => {
     expect(() => parseArgs(["add", "format", "--formatter", "biome"])).toThrow(
       "Unsupported formatter: biome"
@@ -148,11 +154,12 @@ describe("resolveTestRunner", () => {
     expect(resolveTestRunner("node", null)).toBe("jest")
     expect(resolveTestRunner("react", null)).toBe("jest")
     expect(resolveTestRunner("next", null)).toBe("jest")
+    expect(resolveTestRunner("tanstack-start", null)).toBe("jest")
     expect(resolveTestRunner("svelte", null)).toBe("jest")
   })
 
   it("allows each framework to override with --test-runner", () => {
-    const frameworks = ["node", "react", "next", "vue", "svelte", "nuxt"] as const
+    const frameworks = ["node", "react", "next", "tanstack-start", "vue", "svelte", "nuxt"] as const
     for (const framework of frameworks) {
       expect(resolveTestRunner(framework, "jest")).toBe("jest")
       expect(resolveTestRunner(framework, "vitest")).toBe("vitest")

@@ -8,7 +8,7 @@ import {
 
 describe("framework package presets", () => {
   it("includes common packages for every framework", () => {
-    const frameworks = ["node", "react", "next", "vue", "nuxt", "svelte"] as const
+    const frameworks = ["node", "react", "next", "tanstack-start", "vue", "nuxt", "svelte"] as const
     for (const framework of frameworks) {
       const ids = getPackagePresets(framework).map((preset) => preset.id)
       expect(ids).toContain("zod")
@@ -28,8 +28,21 @@ describe("framework package presets", () => {
     )
   })
 
+  it("includes the TanStack suite for TanStack Start", () => {
+    const ids = getPackagePresets("tanstack-start").map((preset) => preset.id)
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "tanstack-query",
+        "tanstack-router",
+        "tanstack-form",
+        "tanstack-store",
+        "tanstack-table",
+      ])
+    )
+  })
+
   it("installs clsx with Tailwind presets", () => {
-    const frameworks = ["react", "next", "vue", "nuxt", "svelte"] as const
+    const frameworks = ["react", "next", "tanstack-start", "vue", "nuxt", "svelte"] as const
     for (const framework of frameworks) {
       expect(getSelectedPackagePresets(framework, ["tailwind"])[0]?.dependencies).toContain("clsx")
     }
@@ -50,6 +63,7 @@ describe("framework package presets", () => {
     expect(resolvePackagePresetId("react", "zustand")).toBe("zustand")
     expect(resolvePackagePresetId("react", "zuzstand")).toBe("zustand")
     expect(resolvePackagePresetId("react", "@tanstack/react-query")).toBe("tanstack-query")
+    expect(resolvePackagePresetId("tanstack-start", "@tanstack/react-form")).toBe("tanstack-form")
     expect(resolvePackagePresetId("vue", "pinia")).toBe("pinia")
     expect(resolvePackagePresetId("node", "zustand")).toBeNull()
   })
@@ -59,5 +73,14 @@ describe("framework package presets", () => {
       expect.arrayContaining(["zod", "date-fns", "zustand", "tanstack-router"])
     )
     expect(getDefaultPackagePresetIds("node")).toEqual(expect.arrayContaining(["zod", "dotenv"]))
+    expect(getDefaultPackagePresetIds("tanstack-start")).toEqual([
+      "zod",
+      "date-fns",
+      "tanstack-query",
+      "tanstack-router",
+      "tanstack-form",
+      "tanstack-store",
+      "tanstack-table",
+    ])
   })
 })
