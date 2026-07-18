@@ -60,7 +60,7 @@ describe("init prompt selection helpers", () => {
 describe("non-interactive prompt behavior", () => {
   it("uses init defaults including the framework package preset", async () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined)
-    const result = await collectInitPrompts(defaults)
+    const result = await collectInitPrompts(defaults, false)
 
     expect(result).toMatchObject({
       pm: "pnpm",
@@ -83,7 +83,7 @@ describe("non-interactive prompt behavior", () => {
 
   it("uses setup defaults without selecting optional packages", async () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined)
-    await expect(collectSetupPrompts(defaults)).resolves.toMatchObject({
+    await expect(collectSetupPrompts(defaults, false)).resolves.toMatchObject({
       pm: "pnpm",
       formatter: "oxfmt",
       testRunner: "jest",

@@ -203,11 +203,14 @@ function getDefaultEnabledFeatures(): EnabledFeatures {
   }
 }
 
-export async function collectInitPrompts(defaults: InitPromptDefaults): Promise<InitPromptResult> {
+export async function collectInitPrompts(
+  defaults: InitPromptDefaults,
+  interactive = Boolean(input.isTTY && output.isTTY)
+): Promise<InitPromptResult> {
   const defaultPackageIds = getDefaultPackagePresetIds(defaults.frameworkId)
   let selectedPackageIds: PackagePresetId[] = []
 
-  if (!input.isTTY || !output.isTTY) {
+  if (!interactive) {
     console.log("Non-interactive shell detected. Use init defaults.")
     selectedPackageIds = defaultPackageIds
   } else {
@@ -231,8 +234,11 @@ export async function collectInitPrompts(defaults: InitPromptDefaults): Promise<
   }
 }
 
-export async function collectSetupPrompts(defaults: InitPromptDefaults): Promise<InitPromptResult> {
-  if (!input.isTTY || !output.isTTY) {
+export async function collectSetupPrompts(
+  defaults: InitPromptDefaults,
+  interactive = Boolean(input.isTTY && output.isTTY)
+): Promise<InitPromptResult> {
+  if (!interactive) {
     console.log("Non-interactive shell detected. Use setup defaults.")
     return {
       pm: defaults.pm,
