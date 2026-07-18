@@ -1,61 +1,52 @@
-import { describe, expect, it } from "@jest/globals"
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
-import { readFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { access, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
+import { describe, expect, it, jest } from "@jest/globals"
+import { withTempProject } from "../../test-utils.ts"
 import {
   DEFAULT_ESLINT_CONFIG,
   ensureEslintConfig,
   findExistingEslintConfig,
 } from "./lint-config.ts"
 
-describe("lint rule helpers", () => {
-  it("detects an existing eslint config file", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-lint-config-"))
-    try {
-      writeFileSync(path.join(dir, ".eslintrc.json"), "{}\n", "utf8")
+async function fileExists(filePath: string): Promise<boolean> {
+  return access(filePath).then(
+    () => true,
+    () => false
+  )
+}
 
-      expect(findExistingEslintConfig(dir)).toBe(".eslintrc.json")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
+describe("eslint config rule", () => {
+  it.each(["eslint.config.js", "eslint.config.ts", ".eslintrc", ".eslintrc.json"])(
+    "detects existing %s",
+    async (fileName) => {
+      await withTempProject(async (projectDir) => {
+        await writeFile(path.join(projectDir, fileName), "")
+        expect(findExistingEslintConfig(projectDir)).toBe(fileName)
+      })
     }
+  )
+
+  it("creates the default config once without overwriting existing configuration", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      const configPath = path.join(projectDir, "eslint.config.mjs")
+
+      await ensureEslintConfig(projectDir, false)
+      expect(await readFile(configPath, "utf8")).toBe(DEFAULT_ESLINT_CONFIG)
+
+      await writeFile(configPath, 'export default ["custom"]\n')
+      await ensureEslintConfig(projectDir, false)
+      expect(await readFile(configPath, "utf8")).toBe('export default ["custom"]\n')
+    })
   })
 
-  it("creates eslint.config.mjs when config is missing", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-lint-create-"))
-    try {
-      await ensureEslintConfig(dir, false)
+  it("reports dry-run intent without writing", async () => {
+    await withTempProject(async (projectDir) => {
+      const log = jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await ensureEslintConfig(projectDir, true)
 
-      const configPath = path.join(dir, "eslint.config.mjs")
-      expect(existsSync(configPath)).toBe(true)
-
-      const content = await readFile(configPath, "utf8")
-      expect(content).toBe(DEFAULT_ESLINT_CONFIG)
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("does not create eslint.config.mjs when another config exists", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-lint-skip-"))
-    try {
-      writeFileSync(path.join(dir, "eslint.config.js"), "export default []\n", "utf8")
-
-      await ensureEslintConfig(dir, false)
-
-      expect(existsSync(path.join(dir, "eslint.config.mjs"))).toBe(false)
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("supports dry-run without creating files", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-lint-dry-"))
-    try {
-      await ensureEslintConfig(dir, true)
-      expect(existsSync(path.join(dir, "eslint.config.mjs"))).toBe(false)
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      expect(await fileExists(path.join(projectDir, "eslint.config.mjs"))).toBe(false)
+      expect(log).toHaveBeenCalledWith("[dry-run] Would create eslint.config.mjs")
+    })
   })
 })
