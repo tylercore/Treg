@@ -14,6 +14,7 @@ const ALLOWED_FRAMEWORKS: readonly FrameworkId[] = [
   "node",
   "react",
   "next",
+  "tanstack-start",
   "vue",
   "svelte",
   "nuxt",
@@ -36,7 +37,7 @@ Options:
   -h, --help                          Show help
 
 Add command options:
-  --framework <node|react|next|vue|svelte|nuxt>
+  --framework <node|react|next|tanstack-start|vue|svelte|nuxt>
                                       Optional framework override (default: auto-detected)
   --dir <path>                        Target directory (defaults to current directory)
   --formatter <prettier|oxfmt>        Formatter for format feature (default: prettier)
@@ -237,7 +238,7 @@ export function resolveFeatureNames(features: readonly FeatureName[]): EnabledFe
 }
 
 export function printSupportedTargets() {
-  console.log("Frameworks: node, react, next, vue, svelte, nuxt")
+  console.log("Frameworks: node, react, next, tanstack-start, vue, svelte, nuxt")
   console.log("Features: lint, format, typescript, test, husky")
   console.log("Formatters: prettier, oxfmt")
   console.log("Test runners: jest, vitest")

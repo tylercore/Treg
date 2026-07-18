@@ -3,6 +3,7 @@ import { nodeFramework } from "./node/index.ts"
 import { nuxtFramework } from "./nuxt/index.ts"
 import { reactFramework } from "./react/index.ts"
 import { svelteFramework } from "./svelte/index.ts"
+import { tanstackStartFramework } from "./tanstack-start/index.ts"
 import { vueFramework } from "./vue/index.ts"
 import type { DetectableFramework, Framework, FrameworkId, PackageJson } from "../types.ts"
 
@@ -12,12 +13,14 @@ const FRAMEWORK_REGISTRY: Record<FrameworkId, DetectableFramework> = {
   nuxt: nuxtFramework,
   react: reactFramework,
   svelte: svelteFramework,
+  "tanstack-start": tanstackStartFramework,
   vue: vueFramework,
 }
 
 const FRAMEWORK_DETECT_ORDER: DetectableFramework[] = [
   nuxtFramework,
   nextFramework,
+  tanstackStartFramework,
   reactFramework,
   vueFramework,
   svelteFramework,

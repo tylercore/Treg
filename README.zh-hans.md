@@ -104,9 +104,11 @@ npx @tylercore/treg add zustand
 
 ## init 流程
 
-执行 `init` 时，`Treg` 会自动检测 package manager 与 framework（顺序为 `nuxt -> next -> react -> vue -> svelte -> node`），并套用默认 features：lint、format、TypeScript、test、husky、AI rules guidance。
+执行 `init` 时，`Treg` 会自动检测 package manager 与 framework（顺序为 `nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node`），并套用默认 features：lint、format、TypeScript、test、husky、AI rules guidance。
 
 唯一的提问是是否安装检测到的 framework 默认 Packages。选择 `Yes` 会安装默认套件组合并写入套件相关 AI rules；选择 `No` 则跳过套件安装。
+
+TanStack Start 项目的默认套件组合包含 Zod、date-fns、TanStack Query、Router、Form 与 Store；TanStack Table 保留为可选 preset。
 
 ---
 
@@ -145,7 +147,7 @@ npx @tylercore/treg add zustand
 
 7. **Packages**（仅在选择安装套件时询问）
    - 所有 framework 共用选项，例如 Zod、date-fns
-   - framework 专属选项，例如 Tailwind CSS、Zustand 或 Pinia、TanStack Query、TanStack Router，以及各 framework 对应的 i18n 套件
+   - framework 专属选项，例如 Tailwind CSS、Zustand 或 Pinia、TanStack Query／Router／Form／Store／Table 套件组，以及各 framework 对应的 i18n 套件
    - 可不选任何项目直接进入下一步
 
 使用 pnpm 时，Treg 会检查既有 `node_modules` 是否链接到与当前 pnpm 版本不同的 store。若检测到 store 不一致，Treg 会停止并打印重建提示，不会自动删除文件。请手动执行 `rm -rf node_modules` 和 `pnpm install` 重建后，再重新执行 Treg。
@@ -227,7 +229,7 @@ npx @tylercore/treg add zustand
 
 ```text
 add <lint|format|typescript|test|husky|package-preset>
---framework <node|react|next|vue|svelte|nuxt>
+--framework <node|react|next|tanstack-start|vue|svelte|nuxt>
 --dir <path>
 --formatter <prettier|oxfmt>
 --test-runner <jest|vitest>
@@ -246,7 +248,7 @@ add <lint|format|typescript|test|husky|package-preset>
 检测顺序：
 
 ```text
-nuxt -> next -> react -> vue -> svelte -> node
+nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
 
 ### Test Runner

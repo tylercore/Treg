@@ -16,6 +16,19 @@ describe("frameworks", () => {
     expect(framework.id).toBe("next")
   })
 
+  it("detects TanStack Start before react", () => {
+    const framework = detectFramework({
+      dependencies: { "@tanstack/react-start": "^1.0.0", react: "19.0.0" },
+    })
+    expect(framework.id).toBe("tanstack-start")
+  })
+
+  it("detects TanStack Start from devDependencies", () => {
+    expect(detectFramework({ devDependencies: { "@tanstack/react-start": "^1.0.0" } }).id).toBe(
+      "tanstack-start"
+    )
+  })
+
   it("detects react from dependencies", () => {
     const framework = detectFramework({ dependencies: { react: "19.0.0" } })
     expect(framework.id).toBe("react")
@@ -60,6 +73,10 @@ describe("frameworks", () => {
       dependencies: { react: "^19.0.0" },
     })
     expect(framework.id).toBe("react")
+  })
+
+  it("resolves explicit TanStack Start framework", () => {
+    expect(resolveFramework("tanstack-start", { dependencies: {} }).id).toBe("tanstack-start")
   })
 
   it("resolves detected react framework", () => {

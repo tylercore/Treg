@@ -107,7 +107,7 @@ npx @tylercore/treg add zustand
 執行 `init` 時，`Treg` 會自動偵測：
 
 - package manager
-- framework，偵測順序為 `nuxt -> next -> react -> vue -> svelte -> node`
+- framework，偵測順序為 `nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node`
 
 接著會套用預設 features：
 
@@ -119,6 +119,8 @@ npx @tylercore/treg add zustand
 - AI rules guidance
 
 唯一的提問是是否安裝偵測到的 framework 預設 Packages。選 `Yes` 會安裝預設套件組合並寫入套件相關 AI rules；選 `No` 則略過套件安裝。
+
+TanStack Start 專案的預設套件組合包含 Zod、date-fns、TanStack Query、Router、Form 與 Store；TanStack Table 保留為選用 preset。
 
 ---
 
@@ -157,7 +159,7 @@ npx @tylercore/treg add zustand
 
 7. **Packages**（僅在選擇安裝套件時詢問）
    - 所有 framework 共用選項，例如 Zod、date-fns
-   - framework 專屬選項，例如 Tailwind CSS、Zustand 或 Pinia、TanStack Query、TanStack Router，以及各 framework 對應的 i18n 套件
+   - framework 專屬選項，例如 Tailwind CSS、Zustand 或 Pinia、TanStack Query／Router／Form／Store／Table 套件組，以及各 framework 對應的 i18n 套件
    - 可不選任何項目直接進入下一步
 
 Node.js 會視為後端目標，因此套件清單會偏向 server、設定、logging 與 database tooling。
@@ -249,7 +251,7 @@ npx @tylercore/treg add zustand
 
 ```text
 add <lint|format|typescript|test|husky|package-preset>
---framework <node|react|next|vue|svelte|nuxt>
+--framework <node|react|next|tanstack-start|vue|svelte|nuxt>
 --dir <path>
 --formatter <prettier|oxfmt>
 --test-runner <jest|vitest>
@@ -268,7 +270,7 @@ add <lint|format|typescript|test|husky|package-preset>
 偵測順序：
 
 ```text
-nuxt -> next -> react -> vue -> svelte -> node
+nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
 
 ### Test Runner
