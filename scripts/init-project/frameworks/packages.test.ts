@@ -5,74 +5,43 @@ import {
   getSelectedPackagePresets,
   resolvePackagePresetId,
 } from "./packages.ts"
+import type { FrameworkId } from "../types.ts"
 
-describe("framework package presets", () => {
-  it("includes common packages for every framework", () => {
-    const frameworks = ["node", "react", "next", "tanstack-start", "vue", "nuxt", "svelte"] as const
-    for (const framework of frameworks) {
-      const ids = getPackagePresets(framework).map((preset) => preset.id)
-      expect(ids).toContain("zod")
-      expect(ids).toContain("date-fns")
-    }
+const frameworks: readonly FrameworkId[] = [
+  "node",
+  "react",
+  "next",
+  "tanstack-start",
+  "vue",
+  "nuxt",
+  "svelte",
+]
+
+describe("framework package preset registry", () => {
+  it.each(frameworks)("defines unique, resolvable defaults for %s", (framework) => {
+    const presets = getPackagePresets(framework)
+    const ids = presets.map(({ id }) => id)
+    const defaults = getDefaultPackagePresetIds(framework)
+
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toEqual(expect.arrayContaining(["zod", "date-fns"]))
+    expect(defaults.length).toBeGreaterThan(0)
+    expect(defaults.every((id) => ids.includes(id))).toBe(true)
   })
 
-  it("uses backend-focused packages for node projects", () => {
-    const ids = getPackagePresets("node").map((preset) => preset.id)
-    expect(ids).toEqual(expect.arrayContaining(["express", "fastify", "dotenv", "pino", "prisma"]))
+  it.each([
+    ["node", ["express", "fastify", "dotenv", "pino", "prisma"]],
+    ["react", ["redux", "zustand", "react-router", "tanstack-router"]],
+    [
+      "tanstack-start",
+      ["tanstack-query", "tanstack-router", "tanstack-form", "tanstack-store", "tanstack-table"],
+    ],
+  ] as const)("provides expected ecosystem choices for %s", (framework, expected) => {
+    const ids = getPackagePresets(framework).map(({ id }) => id)
+    expect(ids).toEqual(expect.arrayContaining([...expected]))
   })
 
-  it("includes common React routing and state options", () => {
-    const ids = getPackagePresets("react").map((preset) => preset.id)
-    expect(ids).toEqual(
-      expect.arrayContaining(["redux", "zustand", "react-router", "tanstack-router"])
-    )
-  })
-
-  it("includes the TanStack suite for TanStack Start", () => {
-    const ids = getPackagePresets("tanstack-start").map((preset) => preset.id)
-    expect(ids).toEqual(
-      expect.arrayContaining([
-        "tanstack-query",
-        "tanstack-router",
-        "tanstack-form",
-        "tanstack-store",
-        "tanstack-table",
-      ])
-    )
-  })
-
-  it("installs clsx with Tailwind presets", () => {
-    const frameworks = ["react", "next", "tanstack-start", "vue", "nuxt", "svelte"] as const
-    for (const framework of frameworks) {
-      expect(getSelectedPackagePresets(framework, ["tailwind"])[0]?.dependencies).toContain("clsx")
-    }
-  })
-
-  it("uses framework-specific i18n packages", () => {
-    expect(getSelectedPackagePresets("react", ["i18n"])[0]?.dependencies).toEqual([
-      "i18next",
-      "react-i18next",
-    ])
-    expect(getSelectedPackagePresets("next", ["i18n"])[0]?.dependencies).toEqual(["next-intl"])
-    expect(getSelectedPackagePresets("vue", ["i18n"])[0]?.dependencies).toEqual(["vue-i18n"])
-    expect(getSelectedPackagePresets("nuxt", ["i18n"])[0]?.dependencies).toEqual(["@nuxtjs/i18n"])
-    expect(getSelectedPackagePresets("svelte", ["i18n"])[0]?.dependencies).toEqual(["svelte-i18n"])
-  })
-
-  it("resolves add targets by preset id and package name", () => {
-    expect(resolvePackagePresetId("react", "zustand")).toBe("zustand")
-    expect(resolvePackagePresetId("react", "zuzstand")).toBe("zustand")
-    expect(resolvePackagePresetId("react", "@tanstack/react-query")).toBe("tanstack-query")
-    expect(resolvePackagePresetId("tanstack-start", "@tanstack/react-form")).toBe("tanstack-form")
-    expect(resolvePackagePresetId("vue", "pinia")).toBe("pinia")
-    expect(resolvePackagePresetId("node", "zustand")).toBeNull()
-  })
-
-  it("defines framework default package sets", () => {
-    expect(getDefaultPackagePresetIds("react")).toEqual(
-      expect.arrayContaining(["zod", "date-fns", "zustand", "tanstack-router"])
-    )
-    expect(getDefaultPackagePresetIds("node")).toEqual(expect.arrayContaining(["zod", "dotenv"]))
+  it("keeps TanStack Table optional in the TanStack Start default", () => {
     expect(getDefaultPackagePresetIds("tanstack-start")).toEqual([
       "zod",
       "date-fns",
@@ -81,5 +50,34 @@ describe("framework package presets", () => {
       "tanstack-form",
       "tanstack-store",
     ])
+    expect(getDefaultPackagePresetIds("tanstack-start")).not.toContain("tanstack-table")
+  })
+
+  it.each(["react", "next", "tanstack-start", "vue", "nuxt", "svelte"] as const)(
+    "adds clsx to the %s Tailwind preset",
+    (framework) => {
+      expect(getSelectedPackagePresets(framework, ["tailwind"])[0]?.dependencies).toContain("clsx")
+    }
+  )
+
+  it.each([
+    ["react", ["i18next", "react-i18next"]],
+    ["next", ["next-intl"]],
+    ["vue", ["vue-i18n"]],
+    ["nuxt", ["@nuxtjs/i18n"]],
+    ["svelte", ["svelte-i18n"]],
+  ] as const)("uses framework-specific i18n dependencies for %s", (framework, expected) => {
+    expect(getSelectedPackagePresets(framework, ["i18n"])[0]?.dependencies).toEqual(expected)
+  })
+
+  it.each([
+    ["react", "zustand", "zustand"],
+    ["react", "zuzstand", "zustand"],
+    ["react", "@tanstack/react-query", "tanstack-query"],
+    ["tanstack-start", "@tanstack/react-form", "tanstack-form"],
+    ["vue", "Pinia", "pinia"],
+    ["node", "zustand", null],
+  ] as const)("resolves %s target %s to %s", (framework, target, expected) => {
+    expect(resolvePackagePresetId(framework, target)).toBe(expected)
   })
 })

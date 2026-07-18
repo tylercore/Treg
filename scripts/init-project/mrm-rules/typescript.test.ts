@@ -7,135 +7,94 @@ import {
   shouldIncludeNodeTypes,
 } from "./typescript-options.ts"
 
-describe("typescript rule helpers", () => {
-  it("adds node type for node projects when types is missing", () => {
-    const merged = mergeCompilerOptions({}, true)
-    expect(merged.types).toEqual(["node"])
+describe("TypeScript compiler option policy", () => {
+  it("enforces strict options without discarding unrelated settings", () => {
+    expect(
+      mergeCompilerOptions({ strict: false, noImplicitAny: false, module: "NodeNext" }, false)
+    ).toMatchObject({
+      strict: true,
+      noImplicitAny: true,
+      noUnusedLocals: true,
+      module: "NodeNext",
+    })
   })
 
-  it("keeps existing types and appends node when enabled", () => {
-    const merged = mergeCompilerOptions(
-      {
-        types: ["vite/client", "jest"],
-      },
-      true
-    )
-    expect(merged.types).toEqual(["vite/client", "jest", "node"])
+  it.each([
+    [undefined, ["node"]],
+    [
+      ["vite/client", "jest"],
+      ["vite/client", "jest", "node"],
+    ],
+    [
+      ["node", "vite/client"],
+      ["node", "vite/client"],
+    ],
+    ["invalid", ["node"]],
+  ])("normalizes node types from %p", (types, expected) => {
+    expect(mergeCompilerOptions({ types }, true).types).toEqual(expected)
   })
 
-  it("deduplicates node type when enabled and already present", () => {
-    const merged = mergeCompilerOptions(
-      {
-        types: ["node", "vite/client"],
-      },
-      true
-    )
-    expect(merged.types).toEqual(["node", "vite/client"])
+  it("leaves existing types untouched when node types are not required", () => {
+    expect(mergeCompilerOptions({ types: ["vite/client", "jest"] }, false).types).toEqual([
+      "vite/client",
+      "jest",
+    ])
+    expect(mergeCompilerOptions({}, false)).not.toHaveProperty("types")
   })
 
-  it("replaces invalid types value with node when enabled", () => {
-    const merged = mergeCompilerOptions(
-      {
-        types: "node",
-      },
-      true
-    )
-    expect(merged.types).toEqual(["node"])
-  })
-
-  it("always enforces required strict compiler options", () => {
-    const merged = mergeCompilerOptions(
-      {
-        strict: false,
-        noImplicitAny: false,
-      },
-      true
-    )
-
-    expect(merged.strict).toBe(true)
-    expect(merged.noImplicitAny).toBe(true)
-    expect(merged.noUnusedLocals).toBe(true)
-  })
-
-  it("does not inject node type when disabled", () => {
-    const merged = mergeCompilerOptions({}, false)
-    expect(merged).not.toHaveProperty("types")
-  })
-
-  it("keeps existing types untouched when node injection is disabled", () => {
-    const merged = mergeCompilerOptions(
-      {
-        types: ["vite/client", "jest"],
-      },
-      false
-    )
-    expect(merged.types).toEqual(["vite/client", "jest"])
-  })
-
-  it("filters non-string values in types", () => {
+  it("filters invalid entries from array-shaped types", () => {
     expect(normalizeTypesValue(["node", 1, null, "vite/client"])).toEqual(["node", "vite/client"])
   })
 
-  it("enables node types only for node framework", () => {
-    expect(shouldIncludeNodeTypes("node")).toBe(true)
-    expect(shouldIncludeNodeTypes("next")).toBe(false)
-    expect(shouldIncludeNodeTypes("nuxt")).toBe(false)
-    expect(shouldIncludeNodeTypes("react")).toBe(false)
-    expect(shouldIncludeNodeTypes("vue")).toBe(false)
-    expect(shouldIncludeNodeTypes("svelte")).toBe(false)
+  it.each([
+    ["node", true],
+    ["next", false],
+    ["nuxt", false],
+    ["react", false],
+    ["vue", false],
+    ["svelte", false],
+    ["tanstack-start", false],
+  ] as const)("node types for %s are %s", (framework, expected) => {
+    expect(shouldIncludeNodeTypes(framework)).toBe(expected)
   })
+})
 
-  it("detects solution-style tsconfig with files/references", () => {
-    expect(
-      isSolutionStyleTsconfig(
-        [],
-        [{ path: "./tsconfig.node.json" }, { path: "./tsconfig.app.json" }]
-      )
-    ).toBe(true)
-  })
-
-  it("does not treat regular tsconfig as solution-style", () => {
+describe("TypeScript config target resolution", () => {
+  it("recognizes only empty-files configs with valid references as solution style", () => {
+    expect(isSolutionStyleTsconfig([], [{ path: "./tsconfig.app.json" }])).toBe(true)
     expect(isSolutionStyleTsconfig(undefined, [{ path: "./tsconfig.app.json" }])).toBe(false)
     expect(isSolutionStyleTsconfig([], [{ notPath: "./tsconfig.app.json" }])).toBe(false)
     expect(isSolutionStyleTsconfig([], [])).toBe(false)
   })
 
-  it("uses root tsconfig target when references are not present", () => {
-    expect(resolveTsconfigTargets("node", undefined, undefined)).toEqual([
-      { path: "tsconfig.json", includeNodeTypes: true },
-    ])
-    expect(resolveTsconfigTargets("vue", undefined, undefined)).toEqual([
-      { path: "tsconfig.json", includeNodeTypes: false },
-    ])
-  })
-
-  it("maps solution-style references to node and vue targets", () => {
-    expect(
-      resolveTsconfigTargets("vue", undefined, [
-        { path: "./tsconfig.node.json" },
-        { path: "./tsconfig.app.json" },
-        { path: "./tsconfig.vitest.json" },
-      ])
-    ).toEqual([
-      { path: "./tsconfig.node.json", includeNodeTypes: true },
-      { path: "./tsconfig.app.json", includeNodeTypes: false },
+  it.each([
+    ["node", true],
+    ["vue", false],
+  ] as const)("uses the root config for regular %s projects", (framework, includeNodeTypes) => {
+    expect(resolveTsconfigTargets(framework, undefined, undefined)).toEqual([
+      { path: "tsconfig.json", includeNodeTypes },
     ])
   })
 
-  it("maps references even when files is not an empty array", () => {
+  it("selects and deduplicates only node/app references", () => {
     expect(
       resolveTsconfigTargets(
         "vue",
-        ["src/main.ts"],
-        [{ path: "./tsconfig.node.json" }, { path: "./tsconfig.app.json" }]
+        [],
+        [
+          { path: ".\\tsconfig.node.json" },
+          { path: "./tsconfig.app.json" },
+          { path: "./tsconfig.app.json" },
+          { path: "./tsconfig.vitest.json" },
+        ]
       )
     ).toEqual([
-      { path: "./tsconfig.node.json", includeNodeTypes: true },
+      { path: ".\\tsconfig.node.json", includeNodeTypes: true },
       { path: "./tsconfig.app.json", includeNodeTypes: false },
     ])
   })
 
-  it("returns empty targets when solution-style has no node/app reference", () => {
+  it("returns no targets when references contain no supported config", () => {
     expect(resolveTsconfigTargets("vue", [], [{ path: "./tsconfig.vitest.json" }])).toEqual([])
   })
 })

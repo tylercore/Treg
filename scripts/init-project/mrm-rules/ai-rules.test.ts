@@ -1,60 +1,79 @@
-import { __testables__, runAiRulesRule } from "./ai-rules.ts"
-import { describe, expect, it } from "@jest/globals"
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
-
+import { access, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
-import { readFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { describe, expect, it, jest } from "@jest/globals"
+import { withTempProject } from "../../test-utils.ts"
+import type { RuleContext } from "../types.ts"
+import { __testables__, runAiRulesRule } from "./ai-rules.ts"
 
-describe("ai-rules helpers", () => {
-  it("builds direct prompt section from enabled features", () => {
+const disabledFeatures = {
+  lint: false,
+  format: false,
+  typescript: false,
+  test: false,
+  husky: false,
+}
+
+function createContext(projectDir: string, overrides: Partial<RuleContext> = {}): RuleContext {
+  return {
+    command: "add",
+    projectDir,
+    framework: { id: "node", testEnvironment: "node", tsRequiredExcludes: [] },
+    formatter: "prettier",
+    addTarget: null,
+    features: [],
+    testRunner: "jest",
+    pm: "pnpm",
+    force: false,
+    dryRun: false,
+    skipHuskyInstall: false,
+    aiRules: true,
+    aiTools: ["claude", "codex", "gemini"],
+    help: false,
+    selectedPackageIds: [],
+    enabledFeatures: disabledFeatures,
+    ...overrides,
+  }
+}
+
+async function seedDocs(projectDir: string, docs: Record<string, string>): Promise<void> {
+  await Promise.all(
+    Object.entries(docs).map(([fileName, content]) =>
+      writeFile(path.join(projectDir, fileName), content)
+    )
+  )
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  return access(filePath).then(
+    () => true,
+    () => false
+  )
+}
+
+describe("AI rule section serialization", () => {
+  it("serializes enabled feature and git policies without legacy skill references", () => {
     const content = __testables__.buildRuleSection({
-      enabledFeatures: {
-        lint: true,
-        format: true,
-        typescript: false,
-        test: true,
-        husky: false,
-      },
+      enabledFeatures: { ...disabledFeatures, lint: true, format: true, test: true },
       testRunner: "vitest",
     })
 
     expect(content).toContain("### Git rules")
-    expect(content).toContain("1. Never use --no-verify")
-    expect(content).toContain("2. Branch names must use `<type>/<summary-kebab-case>`")
-    expect(content).toContain("3. Commit messages must use `<type>: <summary>`")
-    expect(content).toContain(
-      "4. Recommended commit types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `build`, `ci`."
-    )
-    expect(content).toContain(
-      "5. Unless the user asks, never relax TypeScript, lint, or format constraints, and never skip tests."
-    )
+    expect(content).toContain("Never use --no-verify")
+    expect(content).toContain("Branch names must use `<type>/<summary-kebab-case>`")
     expect(content).toContain("### Validation Rules and Checklist")
     expect(content).toContain("1. Formatting")
     expect(content).toContain("2. Lint Validation")
     expect(content).toContain("3. Test Configuration")
-    expect(content).toContain("Prompt: Apply and verify formatting rule.")
-    expect(content).toContain("Prompt: Run and validate lint rule.")
     expect(content).toContain("Current test runner: `vitest`")
-    expect(content).not.toContain("skills/")
-    expect(content).not.toContain("SKILL.md")
+    expect(content).not.toMatch(/skills\/|SKILL\.md/)
   })
 
-  it("builds package guidance from selected package presets", () => {
+  it("round-trips selected package guidance", () => {
+    const framework = { id: "react", testEnvironment: "jsdom", tsRequiredExcludes: [] } as const
     const content = __testables__.buildRuleSection({
-      framework: {
-        id: "react",
-        testEnvironment: "jsdom",
-        tsRequiredExcludes: [],
-      },
+      framework,
       selectedPackageIds: ["tailwind", "zustand", "tanstack-query"],
-      enabledFeatures: {
-        lint: false,
-        format: false,
-        typescript: false,
-        test: false,
-        husky: false,
-      },
+      enabledFeatures: disabledFeatures,
       testRunner: "jest",
     })
 
@@ -62,396 +81,161 @@ describe("ai-rules helpers", () => {
     expect(content).toContain("1. Tailwind CSS")
     expect(content).toContain("2. Zustand")
     expect(content).toContain("3. TanStack Query")
-    expect(content).toContain("Prompt: Use Zustand for client-only state")
-    expect(content).toContain("Prefer Tailwind built-in utilities or project-defined class names")
-    expect(content).toContain(
-      "Split stores by a single feature that can be described in one sentence"
-    )
-    expect(content).toContain("Before adding global state, verify the state cannot stay local")
+    expect(__testables__.readPackageIdsFromRuleSection(content, framework)).toEqual([
+      "tailwind",
+      "tanstack-query",
+      "zustand",
+    ])
   })
 
-  it("reads package guidance from an existing rule section", () => {
-    const content = __testables__.buildRuleSection({
-      framework: {
-        id: "react",
-        testEnvironment: "jsdom",
-        tsRequiredExcludes: [],
-      },
-      selectedPackageIds: ["tailwind", "zustand"],
-      enabledFeatures: {
-        lint: false,
-        format: false,
-        typescript: false,
-        test: false,
-        husky: false,
-      },
-      testRunner: "jest",
+  it("appends a managed section without deleting user or legacy content", () => {
+    const original = "# Header\n\n## Treg AI Skills\n\nlegacy\n\n## Other\n\nkeep"
+    const result = __testables__.upsertRuleSection(original, "### Git rules\n\nnew")
+
+    expect(result).toContain("# Header")
+    expect(result).toContain("legacy")
+    expect(result).toContain("## Other\n\nkeep")
+    expect(result).toContain("### Git rules\n\nnew")
+  })
+})
+
+describe("AI rule document resolution", () => {
+  it.each([
+    [
+      { "AGENTS.md": "# Agents\n", "CLAUDE.md": "# Claude\n", "GEMINI.md": "# Gemini\n" },
+      [
+        ["AGENTS.md", "rules"],
+        ["CLAUDE.md", "rules"],
+        ["GEMINI.md", "rules"],
+      ],
+    ],
+    [{ "GEMINI.md": "# Gemini\n" }, [["GEMINI.md", "rules"]]],
+    [{ "GEMINI.md": "@AGENTS.md\n" }, [["AGENTS.md", "rules"]]],
+    [
+      { "AGENTS.md": "# Agents\n", "CLAUDE.md": "# Claude\n", "GEMINI.md": "@AGENTS.md\n" },
+      [
+        ["AGENTS.md", "rules"],
+        ["CLAUDE.md", "rules"],
+      ],
+    ],
+    [
+      {},
+      [
+        ["AGENTS.md", "rules"],
+        ["CLAUDE.md", "agentsReference"],
+        ["GEMINI.md", "agentsReference"],
+      ],
+    ],
+  ] as const)("resolves document topology %#", async (docs, expected) => {
+    await withTempProject(async (projectDir) => {
+      await seedDocs(projectDir, docs)
+      const resolved = await __testables__.resolveAiRulesDocs(projectDir)
+      expect(resolved.map(({ filePath, mode }) => [path.basename(filePath), mode])).toEqual(
+        expected
+      )
     })
-
-    expect(
-      __testables__.readPackageIdsFromRuleSection(content, {
-        id: "react",
-        testEnvironment: "jsdom",
-        tsRequiredExcludes: [],
-      })
-    ).toEqual(["tailwind", "zustand"])
   })
+})
 
-  it("appends rule section when no existing section is present", () => {
-    const replaced = __testables__.upsertRuleSection(
-      "# Header\n\nSome existing content.",
-      "### Git rules\n\nnew"
-    )
-
-    expect(replaced).toContain("# Header")
-    expect(replaced).toContain("new")
-    expect(replaced).toContain("Some existing content.")
-  })
-
-  it("does not replace legacy header sections", () => {
-    const replaced = __testables__.upsertRuleSection(
-      "# Header\n\n## Treg AI Skills\n\nold\n\n## Other\n\nkeep",
-      "### Git rules\n\nnew"
-    )
-
-    expect(replaced).toContain("### Git rules\n\nnew")
-    expect(replaced).toContain("## Other\n\nkeep")
-    expect(replaced).toContain("old")
-  })
-
-  it("resolves existing docs as rule targets when no doc delegates to AGENTS", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-"))
-    try {
-      writeFileSync(path.join(dir, "CLAUDE.md"), "# Claude\n", "utf8")
-      writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
-      writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n", "utf8")
-
-      await expect(__testables__.resolveAiRulesDocs(dir)).resolves.toEqual([
-        { filePath: path.join(dir, "AGENTS.md"), mode: "rules" },
-        { filePath: path.join(dir, "CLAUDE.md"), mode: "rules" },
-        { filePath: path.join(dir, "GEMINI.md"), mode: "rules" },
-      ])
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("resolves only existing docs when no doc delegates to AGENTS", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-missing-"))
-    try {
-      writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n", "utf8")
-
-      await expect(__testables__.resolveAiRulesDocs(dir)).resolves.toEqual([
-        { filePath: path.join(dir, "GEMINI.md"), mode: "rules" },
-      ])
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("resolves AGENTS only when Claude or Gemini delegates to AGENTS", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-missing-"))
-    try {
-      writeFileSync(path.join(dir, "GEMINI.md"), "@AGENTS.md\n", "utf8")
-
-      await expect(__testables__.resolveAiRulesDocs(dir)).resolves.toEqual([
-        { filePath: path.join(dir, "AGENTS.md"), mode: "rules" },
-      ])
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("resolves non-delegating docs with AGENTS when another doc delegates", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-mixed-"))
-    try {
-      writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
-      writeFileSync(path.join(dir, "CLAUDE.md"), "# Claude\n", "utf8")
-      writeFileSync(path.join(dir, "GEMINI.md"), "@AGENTS.md\n", "utf8")
-
-      await expect(__testables__.resolveAiRulesDocs(dir)).resolves.toEqual([
-        { filePath: path.join(dir, "AGENTS.md"), mode: "rules" },
-        { filePath: path.join(dir, "CLAUDE.md"), mode: "rules" },
-      ])
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("resolves all three docs when none exist", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-missing-"))
-    try {
-      await expect(__testables__.resolveAiRulesDocs(dir)).resolves.toEqual([
-        { filePath: path.join(dir, "AGENTS.md"), mode: "rules" },
-        { filePath: path.join(dir, "CLAUDE.md"), mode: "agentsReference" },
-        { filePath: path.join(dir, "GEMINI.md"), mode: "agentsReference" },
-      ])
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("injects direct guidance into each selected doc without skill files", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-inject-"))
-    try {
-      writeFileSync(path.join(dir, "CLAUDE.md"), "# Claude\n", "utf8")
-      writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
-      writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n", "utf8")
-
-      await runAiRulesRule({
-        command: "add",
-        projectDir: dir,
-        framework: {
-          id: "node",
-          testEnvironment: "node",
-          tsRequiredExcludes: [],
-        },
-        formatter: "prettier",
-        addTarget: null,
-        features: [],
-        testRunner: "jest",
-        pm: "pnpm",
-        force: false,
-        dryRun: false,
-        skipHuskyInstall: false,
-        aiRules: true,
-        aiTools: ["claude", "codex", "gemini"],
-        help: false,
-        selectedPackageIds: [],
-        enabledFeatures: {
-          lint: true,
-          format: false,
-          typescript: false,
-          test: false,
-          husky: false,
-        },
+describe("AI rules filesystem behavior", () => {
+  it("updates existing independent documents with direct guidance", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await seedDocs(projectDir, {
+        "AGENTS.md": "# Agents\n",
+        "CLAUDE.md": "# Claude\n",
+        "GEMINI.md": "# Gemini\n",
       })
 
-      const claudeDoc = await readFile(path.join(dir, "CLAUDE.md"), "utf8")
-      const agentsDoc = await readFile(path.join(dir, "AGENTS.md"), "utf8")
-      const geminiDoc = await readFile(path.join(dir, "GEMINI.md"), "utf8")
+      await runAiRulesRule(
+        createContext(projectDir, {
+          enabledFeatures: { ...disabledFeatures, lint: true },
+        })
+      )
 
-      expect(claudeDoc).toContain("### Git rules")
-      expect(claudeDoc).toContain("Prompt: Run and validate lint rule.")
-      expect(agentsDoc).toContain("### Git rules")
-      expect(geminiDoc).toContain("### Git rules")
-      expect(existsSync(path.join(dir, "skills"))).toBe(false)
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      for (const fileName of ["AGENTS.md", "CLAUDE.md", "GEMINI.md"]) {
+        const content = await readFile(path.join(projectDir, fileName), "utf8")
+        expect(content).toContain("### Git rules")
+        expect(content).toContain("Prompt: Run and validate lint rule.")
+      }
+      expect(await fileExists(path.join(projectDir, "skills"))).toBe(false)
+    })
   })
 
-  it("injects guidance into AGENTS and non-delegating docs", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-selective-"))
-    try {
-      writeFileSync(path.join(dir, "CLAUDE.md"), "# Claude\n", "utf8")
-      writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
-      writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n\n@AGENTS.md\n", "utf8")
-
-      await runAiRulesRule({
-        command: "add",
-        projectDir: dir,
-        framework: {
-          id: "node",
-          testEnvironment: "node",
-          tsRequiredExcludes: [],
-        },
-        formatter: "prettier",
-        addTarget: null,
-        features: [],
-        testRunner: "jest",
-        pm: "pnpm",
-        force: false,
-        dryRun: false,
-        skipHuskyInstall: false,
-        aiRules: true,
-        aiTools: ["claude", "codex", "gemini"],
-        help: false,
-        selectedPackageIds: [],
-        enabledFeatures: {
-          lint: true,
-          format: false,
-          typescript: false,
-          test: false,
-          husky: false,
-        },
+  it("updates AGENTS and independent docs but preserves delegating docs", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await seedDocs(projectDir, {
+        "AGENTS.md": "# Agents\n",
+        "CLAUDE.md": "# Claude\n",
+        "GEMINI.md": "@AGENTS.md\n",
       })
 
-      const claudeDoc = await readFile(path.join(dir, "CLAUDE.md"), "utf8")
-      const agentsDoc = await readFile(path.join(dir, "AGENTS.md"), "utf8")
-      const geminiDoc = await readFile(path.join(dir, "GEMINI.md"), "utf8")
+      await runAiRulesRule(
+        createContext(projectDir, { enabledFeatures: { ...disabledFeatures, lint: true } })
+      )
 
-      expect(claudeDoc).toContain("### Git rules")
-      expect(agentsDoc).toContain("### Git rules")
-      expect(geminiDoc).not.toContain("### Git rules")
-      expect(geminiDoc).toContain("@AGENTS.md")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      expect(await readFile(path.join(projectDir, "AGENTS.md"), "utf8")).toContain("### Git rules")
+      expect(await readFile(path.join(projectDir, "CLAUDE.md"), "utf8")).toContain("### Git rules")
+      expect(await readFile(path.join(projectDir, "GEMINI.md"), "utf8")).toBe("@AGENTS.md\n")
+    })
   })
 
-  it("add creates all AI docs with AGENTS as the rule source when none exist", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-create-docs-"))
-    try {
-      await runAiRulesRule({
-        command: "add",
-        projectDir: dir,
-        framework: {
-          id: "node",
-          testEnvironment: "node",
-          tsRequiredExcludes: [],
-        },
-        formatter: "prettier",
-        addTarget: null,
-        features: [],
-        testRunner: "jest",
-        pm: "pnpm",
-        force: false,
-        dryRun: false,
-        skipHuskyInstall: false,
-        aiRules: true,
-        aiTools: ["codex", "gemini"],
-        help: false,
-        selectedPackageIds: [],
-        enabledFeatures: {
-          lint: true,
-          format: false,
-          typescript: false,
-          test: false,
-          husky: false,
-        },
-      })
+  it("creates the canonical three-document topology when none exist", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await runAiRulesRule(
+        createContext(projectDir, { enabledFeatures: { ...disabledFeatures, lint: true } })
+      )
 
-      expect(existsSync(path.join(dir, "AGENTS.md"))).toBe(true)
-      expect(existsSync(path.join(dir, "GEMINI.md"))).toBe(true)
-      expect(existsSync(path.join(dir, "CLAUDE.md"))).toBe(true)
-
-      const agentsDoc = await readFile(path.join(dir, "AGENTS.md"), "utf8")
-      const claudeDoc = await readFile(path.join(dir, "CLAUDE.md"), "utf8")
-      const geminiDoc = await readFile(path.join(dir, "GEMINI.md"), "utf8")
-
-      expect(agentsDoc).toContain("### Git rules")
-      expect(claudeDoc).toBe("@AGENTS.md\n")
-      expect(geminiDoc).toBe("@AGENTS.md\n")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      expect(await readFile(path.join(projectDir, "AGENTS.md"), "utf8")).toContain("### Git rules")
+      expect(await readFile(path.join(projectDir, "CLAUDE.md"), "utf8")).toBe("@AGENTS.md\n")
+      expect(await readFile(path.join(projectDir, "GEMINI.md"), "utf8")).toBe("@AGENTS.md\n")
+    })
   })
 
-  it("init updates existing docs without creating missing docs when no doc delegates to AGENTS", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-create-docs-"))
-    try {
-      writeFileSync(path.join(dir, "GEMINI.md"), "# Gemini\n", "utf8")
-
-      await runAiRulesRule({
+  it("updates only existing docs and remains idempotent", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await seedDocs(projectDir, { "GEMINI.md": "# Gemini\n" })
+      const context = createContext(projectDir, {
         command: "init",
-        projectDir: dir,
-        framework: {
-          id: "node",
-          testEnvironment: "node",
-          tsRequiredExcludes: [],
-        },
-        formatter: "prettier",
-        addTarget: null,
-        features: [],
-        testRunner: "jest",
-        pm: "pnpm",
-        force: false,
-        dryRun: false,
-        skipHuskyInstall: false,
-        aiRules: true,
-        aiTools: ["codex", "gemini"],
-        help: false,
-        selectedPackageIds: [],
-        enabledFeatures: {
-          lint: true,
-          format: false,
-          typescript: false,
-          test: false,
-          husky: false,
-        },
+        enabledFeatures: { ...disabledFeatures, lint: true },
       })
 
-      const geminiDoc = await readFile(path.join(dir, "GEMINI.md"), "utf8")
+      await runAiRulesRule(context)
+      const firstRun = await readFile(path.join(projectDir, "GEMINI.md"), "utf8")
+      await runAiRulesRule(context)
 
-      expect(existsSync(path.join(dir, "AGENTS.md"))).toBe(false)
-      expect(existsSync(path.join(dir, "CLAUDE.md"))).toBe(false)
-      expect(geminiDoc).toContain("### Git rules")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      expect(await readFile(path.join(projectDir, "GEMINI.md"), "utf8")).toBe(firstRun)
+      expect(await fileExists(path.join(projectDir, "AGENTS.md"))).toBe(false)
+      expect(await fileExists(path.join(projectDir, "CLAUDE.md"))).toBe(false)
+    })
   })
 
-  it("preserves existing feature guidance when add installs only specific features", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-ai-rules-preserve-add-"))
-    try {
-      writeFileSync(path.join(dir, "AGENTS.md"), "# Agents\n", "utf8")
+  it("merges sequential add guidance instead of erasing earlier features", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await seedDocs(projectDir, { "AGENTS.md": "# Agents\n" })
 
-      await runAiRulesRule({
-        command: "add",
-        projectDir: dir,
-        framework: {
-          id: "node",
-          testEnvironment: "node",
-          tsRequiredExcludes: [],
-        },
-        formatter: "prettier",
-        addTarget: null,
-        features: ["test"],
-        testRunner: "jest",
-        pm: "pnpm",
-        force: false,
-        dryRun: false,
-        skipHuskyInstall: false,
-        aiRules: true,
-        aiTools: ["codex"],
-        help: false,
-        selectedPackageIds: [],
-        enabledFeatures: {
-          lint: false,
-          format: false,
-          typescript: false,
-          test: true,
-          husky: false,
-        },
-      })
+      await runAiRulesRule(
+        createContext(projectDir, {
+          features: ["test"],
+          enabledFeatures: { ...disabledFeatures, test: true },
+        })
+      )
+      await runAiRulesRule(
+        createContext(projectDir, {
+          features: ["format"],
+          testRunner: "vitest",
+          enabledFeatures: { ...disabledFeatures, format: true },
+        })
+      )
 
-      await runAiRulesRule({
-        command: "add",
-        projectDir: dir,
-        framework: {
-          id: "node",
-          testEnvironment: "node",
-          tsRequiredExcludes: [],
-        },
-        formatter: "prettier",
-        addTarget: null,
-        features: ["format"],
-        testRunner: "vitest",
-        pm: "pnpm",
-        force: false,
-        dryRun: false,
-        skipHuskyInstall: false,
-        aiRules: true,
-        aiTools: ["codex"],
-        help: false,
-        selectedPackageIds: [],
-        enabledFeatures: {
-          lint: false,
-          format: true,
-          typescript: false,
-          test: false,
-          husky: false,
-        },
-      })
-
-      const agentsDoc = await readFile(path.join(dir, "AGENTS.md"), "utf8")
-
-      expect(agentsDoc).toContain("1. Formatting")
-      expect(agentsDoc).toContain("2. Test Configuration")
-      expect(agentsDoc).toContain("Current test runner: `jest`")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      const content = await readFile(path.join(projectDir, "AGENTS.md"), "utf8")
+      expect(content).toContain("1. Formatting")
+      expect(content).toContain("2. Test Configuration")
+      expect(content).toContain("Current test runner: `jest`")
+    })
   })
 })

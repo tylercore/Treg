@@ -1,93 +1,90 @@
-import { describe, expect, it } from "@jest/globals"
-import { __testables__, buildPackageInstallPlan } from "./packages.ts"
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { access, mkdir, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
-import { readFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { describe, expect, it, jest } from "@jest/globals"
+import { withTempProject, writeJson } from "../../test-utils.ts"
+import { __testables__, buildPackageInstallPlan } from "./packages.ts"
+
+const preset = (
+  id: "tailwind" | "zustand",
+  dependencies: string[] = [],
+  devDependencies: string[] = []
+) => ({
+  id,
+  label: id,
+  description: id,
+  dependencies,
+  devDependencies,
+  aiRule: { prompt: id, when: id, checklist: [id] },
+})
+
+async function fileExists(filePath: string): Promise<boolean> {
+  return access(filePath).then(
+    () => true,
+    () => false
+  )
+}
 
 describe("packages rule", () => {
-  it("separates runtime and dev dependencies", () => {
+  it("builds a stable, deduplicated install plan by dependency type", () => {
     expect(
       buildPackageInstallPlan([
-        {
-          id: "tailwind",
-          label: "Tailwind CSS",
-          description: "Styling",
-          devDependencies: ["tailwindcss"],
-          aiRule: {
-            prompt: "Use Tailwind.",
-            when: "When styling.",
-            checklist: ["Check classes."],
-          },
-        },
-        {
-          id: "zustand",
-          label: "Zustand",
-          description: "State",
-          dependencies: ["zustand"],
-          aiRule: {
-            prompt: "Use Zustand.",
-            when: "When state is shared.",
-            checklist: ["Keep stores focused."],
-          },
-        },
+        preset("tailwind", ["clsx"], ["tailwindcss"]),
+        preset("zustand", ["zustand", "clsx"], ["tailwindcss"]),
       ])
     ).toEqual({
-      dependencies: ["zustand"],
+      dependencies: ["clsx", "zustand"],
       devDependencies: ["tailwindcss"],
     })
   })
 
-  it("detects TypeScript projects from tsconfig", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-cn-ts-"))
-    try {
-      writeFileSync(path.join(dir, "tsconfig.json"), "{}", "utf8")
-      expect(__testables__.hasTypeScript(dir)).toBe(true)
-      expect(__testables__.getCnHelperContent(dir)).toContain("type ClassValue")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+  it.each([
+    ["tsconfig", true],
+    ["dependency", true],
+    ["devDependency", true],
+    ["javascript", false],
+  ] as const)("detects a %s project", async (fixture, expected) => {
+    await withTempProject(async (projectDir) => {
+      if (fixture === "tsconfig") await writeFile(path.join(projectDir, "tsconfig.json"), "{}")
+      if (fixture === "dependency") {
+        await writeJson(projectDir, { dependencies: { typescript: "^5" } })
+      }
+      if (fixture === "devDependency") {
+        await writeJson(projectDir, { devDependencies: { typescript: "^5" } })
+      }
+      expect(__testables__.hasTypeScript(projectDir)).toBe(expected)
+    })
   })
 
-  it("creates cn.ts in lib for TypeScript projects", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-cn-helper-ts-"))
-    try {
-      writeFileSync(path.join(dir, "tsconfig.json"), "{}", "utf8")
+  it("chooses the existing lib convention and creates a matching cn helper", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      await mkdir(path.join(projectDir, "app", "lib"), { recursive: true })
+      await writeFile(path.join(projectDir, "tsconfig.json"), "{}")
 
-      await __testables__.ensureCnHelper(dir, false, false)
+      expect(__testables__.resolveLibDir(projectDir)).toBe("app/lib")
+      await __testables__.ensureCnHelper(projectDir, false, false)
+      const target = path.join(projectDir, "app", "lib", "cn.ts")
+      expect(await readFile(target, "utf8")).toContain("type ClassValue")
 
-      const target = path.join(dir, "lib", "cn.ts")
-      expect(existsSync(target)).toBe(true)
-      await expect(readFile(target, "utf8")).resolves.toContain("clsx")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      await mkdir(path.join(projectDir, "lib"))
+      expect(__testables__.resolveLibDir(projectDir)).toBe("lib")
+    })
   })
 
-  it("creates cn.js in app/lib for JavaScript projects when app/lib exists", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-cn-helper-js-"))
-    try {
-      mkdirSync(path.join(dir, "app", "lib"), { recursive: true })
+  it("does not overwrite an existing helper and never writes during dry-run", async () => {
+    await withTempProject(async (projectDir) => {
+      jest.spyOn(console, "log").mockImplementation(() => undefined)
+      const target = path.join(projectDir, "lib", "cn.js")
+      await mkdir(path.dirname(target), { recursive: true })
+      await writeFile(target, "custom\n")
 
-      await __testables__.ensureCnHelper(dir, false, false)
+      await __testables__.ensureCnHelper(projectDir, false, false)
+      expect(await readFile(target, "utf8")).toBe("custom\n")
 
-      const target = path.join(dir, "app", "lib", "cn.js")
-      expect(existsSync(target)).toBe(true)
-      await expect(readFile(target, "utf8")).resolves.toContain("export function cn")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it("prefers existing lib over app/lib", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "treg-cn-lib-choice-"))
-    try {
-      mkdirSync(path.join(dir, "lib"), { recursive: true })
-      mkdirSync(path.join(dir, "app", "lib"), { recursive: true })
-
-      expect(__testables__.resolveLibDir(dir)).toBe("lib")
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
+      await withTempProject(async (dryRunDir) => {
+        await __testables__.ensureCnHelper(dryRunDir, false, true)
+        expect(await fileExists(path.join(dryRunDir, "lib", "cn.js"))).toBe(false)
+      })
+    })
   })
 })
