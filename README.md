@@ -121,7 +121,7 @@ It then applies the default features:
 
 The only prompt is whether to install default Packages for the detected framework. Selecting `Yes` installs the framework default package preset set and writes package-specific AI rules guidance. Selecting `No` skips package installation.
 
-For TanStack Start projects, the default package set includes Zod, date-fns, TanStack Query, Router, Form, Store, and Table.
+For TanStack Start projects, the default package set includes Zod, date-fns, TanStack Query, Router, Form, and Store. TanStack Table remains available as an optional preset.
 
 ---
 

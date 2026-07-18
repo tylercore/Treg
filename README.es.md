@@ -109,7 +109,7 @@ Durante `init`, `Treg` detecta el package manager y el framework (orden: `nuxt -
 
 La única pregunta es si se instalan los Packages por defecto del framework detectado. `Yes` instala el conjunto de paquetes por defecto y escribe sus guías de AI rules; `No` omite la instalación de paquetes.
 
-Para proyectos TanStack Start, el conjunto predeterminado incluye Zod, date-fns, TanStack Query, Router, Form, Store y Table.
+Para proyectos TanStack Start, el conjunto predeterminado incluye Zod, date-fns, TanStack Query, Router, Form y Store. TanStack Table sigue disponible como preset opcional.
 
 ---
 

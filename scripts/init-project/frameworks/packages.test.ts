@@ -80,7 +80,6 @@ describe("framework package presets", () => {
       "tanstack-router",
       "tanstack-form",
       "tanstack-store",
-      "tanstack-table",
     ])
   })
 })

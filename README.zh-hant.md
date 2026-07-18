@@ -120,7 +120,7 @@ npx @tylercore/treg add zustand
 
 唯一的提問是是否安裝偵測到的 framework 預設 Packages。選 `Yes` 會安裝預設套件組合並寫入套件相關 AI rules；選 `No` 則略過套件安裝。
 
-TanStack Start 專案的預設套件組合包含 Zod、date-fns、TanStack Query、Router、Form、Store 與 Table。
+TanStack Start 專案的預設套件組合包含 Zod、date-fns、TanStack Query、Router、Form 與 Store；TanStack Table 保留為選用 preset。
 
 ---
 

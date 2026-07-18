@@ -103,7 +103,7 @@ Framework detection order:
 nuxt -> next -> tanstack-start -> react -> vue -> svelte -> node
 ```
 
-TanStack Start defaults include Zod, date-fns, TanStack Query, Router, Form, Store, and Table.
+TanStack Start defaults include Zod, date-fns, TanStack Query, Router, Form, and Store. TanStack Table remains available as an optional preset.
 
 Default test runner:
 

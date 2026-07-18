@@ -36,7 +36,6 @@ const DEFAULT_PACKAGE_PRESET_IDS: Record<FrameworkId, readonly PackagePresetId[]
     "tanstack-router",
     "tanstack-form",
     "tanstack-store",
-    "tanstack-table",
   ],
   vue: ["zod", "date-fns", "pinia", "tanstack-query", "vueuse"],
 }

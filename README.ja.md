@@ -109,7 +109,7 @@ npx @tylercore/treg add zustand
 
 唯一の質問は、検出した framework の既定 Packages をインストールするかどうかです。`Yes` を選ぶと既定パッケージセットをインストールし、関連する AI rules guidance も書き込みます。`No` を選ぶとパッケージのインストールをスキップします。
 
-TanStack Start プロジェクトの既定パッケージセットには、Zod、date-fns、TanStack Query、Router、Form、Store、Table が含まれます。
+TanStack Start プロジェクトの既定パッケージセットには、Zod、date-fns、TanStack Query、Router、Form、Store が含まれます。TanStack Table は任意の preset として引き続き選択できます。
 
 ---
 
