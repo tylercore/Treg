@@ -53,6 +53,7 @@
 - `ci.yml` 僅監聽 `main` branch 的 push。
 - `publish.yml` 僅監聽版本 tag（`v*`）的 push。
 - 安裝與共用驗證步驟（format/lint/type:check/test/build/smoke test）統一放在 reusable workflow `_verify.yml`。
+- GitHub JavaScript Actions 必須使用支援 Node.js 24 runtime 的 major 版本。
 
 ## CLI behavior rules
 

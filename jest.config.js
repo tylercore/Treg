@@ -4,7 +4,20 @@ const config = {
   clearMocks: true,
   restoreMocks: true,
   transform: {
-    "^.+\\.ts$": "<rootDir>/jest.transform.cjs",
+    "^.+\\.ts$": [
+      "@swc/jest",
+      {
+        jsc: {
+          parser: {
+            syntax: "typescript",
+          },
+          target: "es2022",
+        },
+        module: {
+          type: "commonjs",
+        },
+      },
+    ],
   },
   testMatch: ["**/*.test.ts"],
 }
