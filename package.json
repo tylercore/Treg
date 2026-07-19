@@ -52,6 +52,8 @@
     "mrm-core": "^7.1.22"
   },
   "devDependencies": {
+    "@swc/core": "^1.15.43",
+    "@swc/jest": "^0.2.39",
     "@types/node": "^20",
     "eslint": "^9",
     "husky": "^9.1.7",
